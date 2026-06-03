@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <h1>🏭 Nhà cung cấp</h1>
+  <a class="btn btn-ghost" href="/dashboard">← Về quản lý kho</a>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <h2>Thêm nhà cung cấp</h2>
+    <form action="/nha-cung-cap" method="POST">
+      <label>Tên nhà cung cấp *</label>
+      <input type="text" name="name" required placeholder="VD: Công ty ABC">
+      <label>Số điện thoại</label>
+      <input type="text" name="phone" placeholder="(tùy chọn)">
+      <label>Email</label>
+      <input type="email" name="email" placeholder="(tùy chọn)">
+      <label>Địa chỉ</label>
+      <input type="text" name="address" placeholder="(tùy chọn)">
+      <label>Ghi chú</label>
+      <input type="text" name="note" placeholder="(tùy chọn)">
+      <button class="btn btn-primary btn-block" type="submit">Thêm nhà cung cấp</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Danh sách (<%= suppliers.length %>)</h2>
+    <table class="mini-table">
+      <thead><tr><th>Tên</th><th>Điện thoại</th><th>Email</th><th>SP</th><th></th></tr></thead>
+      <tbody>
+        <% if (suppliers.length === 0) { %><tr><td colspan="5" class="empty">Chưa có nhà cung cấp.</td></tr><% } %>
+        <% suppliers.forEach(function(s){ %>
+          <tr>
+            <td><b><%= s.name %></b><% if (s.address) { %><br><span class="muted" style="font-size:11px"><%= s.address %></span><% } %></td>
+            <td><%= s.phone || '' %></td>
+            <td><%= s.email || '' %></td>
+            <td><%= s.product_count %></td>
+            <td class="row-actions">
+              <a href="#" class="link" onclick="document.getElementById('edit-<%= s.id %>').style.display='block';return false">Sửa</a>
+              <% if (user.role === 'admin') { %>
+                <form action="/nha-cung-cap/<%= s.id %>/delete" method="POST" onsubmit="return confirm('Xóa NCC \'<%= s.name %>\'?')" style="display:inline">
+                  <button type="submit" class="link link-danger">Xóa</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+          <tr id="edit-<%= s.id %>" style="display:none">
+            <td colspan="5">
+              <form action="/nha-cung-cap/<%= s.id %>" method="POST" class="edit-row">
+                <input type="text" name="name" value="<%= s.name %>" placeholder="Tên" required>
+                <input type="text" name="phone" value="<%= s.phone || '' %>" placeholder="Điện thoại">
+                <input type="email" name="email" value="<%= s.email || '' %>" placeholder="Email">
+                <input type="text" name="address" value="<%= s.address || '' %>" placeholder="Địa chỉ">
+                <input type="text" name="note" value="<%= s.note || '' %>" placeholder="Ghi chú">
+                <button type="submit" class="btn btn-sm btn-primary">Lưu</button>
+              </form>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

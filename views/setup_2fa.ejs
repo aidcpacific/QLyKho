@@ -1,0 +1,55 @@
+<%- include('partials/header') %>
+
+<div class="auth-wrap">
+  <div class="auth-card auth-card-wide">
+    <h1>Thiết lập xác thực 2 lớp (2FA)</h1>
+
+    <% if (enabled && !pending) { %>
+      <div class="alert alert-success">✓ Tài khoản của bạn đang BẬT 2FA.</div>
+      <p class="muted">Bạn có thể quét lại mã QR vào thiết bị khác, hoặc tắt 2FA bên dưới.</p>
+    <% } else { %>
+      <p class="muted">Quét mã QR bằng app <b>Google Authenticator</b> / <b>Microsoft Authenticator</b> / <b>Authy</b>, rồi nhập mã 6 số để xác nhận.</p>
+    <% } %>
+
+    <div class="tfa-steps">
+      <div class="tfa-step">
+        <span class="step-num">1</span>
+        <div>Cài app <b>Google Authenticator</b> (hoặc Authy) trên điện thoại.</div>
+      </div>
+      <div class="tfa-step">
+        <span class="step-num">2</span>
+        <div>Mở app → bấm <b>+</b> → <b>Quét mã QR</b> dưới đây:</div>
+      </div>
+    </div>
+
+    <div class="qr-box">
+      <img src="<%= qr %>" alt="QR 2FA" width="220" height="220">
+    </div>
+
+    <div class="secret-box">
+      <span class="muted">Không quét được? Nhập tay mã này vào app:</span>
+      <code class="secret-code"><%= secret %></code>
+    </div>
+
+    <form action="/setup-2fa" method="POST">
+      <label>3. Nhập mã 6 số từ app để xác nhận</label>
+      <input type="text" name="code" inputmode="numeric" pattern="[0-9 ]*" maxlength="7"
+             autocomplete="one-time-code" autofocus required class="otp-input" placeholder="123456">
+      <button class="btn btn-primary btn-block" type="submit">
+        <%= (enabled && !pending) ? 'Xác nhận lại' : 'Bật 2FA' %>
+      </button>
+    </form>
+
+    <% if (enabled && !pending) { %>
+      <form action="/setup-2fa/disable" method="POST" onsubmit="return confirm('Tắt xác thực 2 lớp?')" style="margin-top:10px">
+        <button class="btn btn-ghost btn-block" type="submit">Tắt 2FA</button>
+      </form>
+    <% } %>
+
+    <% if (pending) { %>
+      <p class="muted" style="margin-top:12px;font-size:13px">⚠ Bạn cần hoàn tất bước này để có thể đăng nhập bằng 2FA.</p>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

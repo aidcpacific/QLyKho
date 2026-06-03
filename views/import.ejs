@@ -1,0 +1,65 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <h1>📥 Nhập hàng loạt</h1>
+  <a class="btn btn-ghost" href="/dashboard">← Về quản lý kho</a>
+</div>
+
+<% if (result) { %>
+  <div class="alert <%= result.ok > 0 ? 'alert-success' : 'alert-error' %>">
+    Đã nhập thành công <b><%= result.ok %></b>/<%= result.total %> dòng.
+  </div>
+  <% if (result.errors && result.errors.length) { %>
+    <div class="alert alert-error">
+      <b>Một số dòng bị bỏ qua:</b>
+      <ul style="margin:6px 0 0 18px">
+        <% result.errors.forEach(function(e){ %><li><%= e %></li><% }); %>
+      </ul>
+    </div>
+  <% } %>
+  <p><a class="btn btn-primary" href="/dashboard">Xem kho hàng</a> <a class="btn btn-ghost" href="/inventory/import">Nhập tiếp</a></p>
+<% } else { %>
+
+<form class="form-card" action="/inventory/import" method="POST" id="import-form">
+  <h2 style="margin-bottom:6px">Cách 1 — Chọn file CSV</h2>
+  <p class="muted">Chọn file <code>.csv</code> (xuất từ Google Sheets/Excel). Nội dung file sẽ được nạp vào ô bên dưới để bạn xem trước.</p>
+  <input type="file" id="csv-file" accept=".csv,text/csv,text/plain">
+
+  <h2 style="margin:18px 0 6px">Cách 2 — Dán dữ liệu từ Google Sheet</h2>
+  <p class="muted">Bôi đen nhiều dòng trong Google Sheet/Excel rồi <b>Ctrl+V</b> vào ô dưới (ngăn cách bằng Tab). Hoặc dán dạng CSV ngăn cách bằng dấu phẩy.</p>
+  <textarea name="data" id="data" rows="10" placeholder="Dán dữ liệu vào đây, mỗi sản phẩm một dòng..." style="width:100%;font-family:monospace;font-size:13px;padding:12px;border:1px solid var(--border);border-radius:8px"></textarea>
+
+  <div class="cols-help">
+    <b>Thứ tự cột</b> (giống file khi bấm "Xuất Google Sheet"). Chỉ <b>Tên sản phẩm</b> là bắt buộc, các cột khác có thể bỏ trống:
+    <ol>
+      <% columns.forEach(function(c){ %><li><%= c.label %></li><% }); %>
+    </ol>
+    <p class="muted">Mẹo: bấm <b>Xuất Google Sheet</b> ở trang kho để lấy đúng mẫu, sửa rồi nhập lại. Nếu dòng đầu là tiêu đề, hệ thống tự bỏ qua.</p>
+  </div>
+
+  <button class="btn btn-primary" type="submit">Nhập vào kho</button>
+</form>
+
+<script>
+// Đọc file CSV ngay trên trình duyệt rồi đổ vào ô textarea (không cần upload riêng)
+(function () {
+  var fileInput = document.getElementById('csv-file');
+  var ta = document.getElementById('data');
+  if (!fileInput || !ta) return;
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function (e) { ta.value = e.target.result; };
+    reader.readAsText(f, 'UTF-8');
+  });
+  // Chặn submit nếu chưa có dữ liệu
+  document.getElementById('import-form').addEventListener('submit', function (ev) {
+    if (!ta.value.trim()) { ev.preventDefault(); alert('Vui lòng chọn file hoặc dán dữ liệu trước.'); }
+  });
+})();
+</script>
+
+<% } %>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,30 @@
+{
+  "name": "quan-ly-kho",
+  "version": "1.0.0",
+  "description": "Trang web quản lý kho hàng - đăng nhập, đăng ký, thông báo Gmail",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test-email": "node test-email.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.17.3",
+    "bcryptjs": "^2.4.3",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "nodemailer": "^6.9.16",
+    "otplib": "^13.4.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "passport-local": "^1.0.0",
+    "qrcode": "^1.5.4"
+  }
+}

@@ -1,0 +1,20 @@
+<%- include('partials/header') %>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Quên mật khẩu</h1>
+    <p class="muted">Nhập email, chúng tôi sẽ gửi liên kết đặt lại mật khẩu.</p>
+
+    <form action="/forgot" method="POST">
+      <label>Email</label>
+      <input type="email" name="email" required autofocus placeholder="email@example.com">
+      <button class="btn btn-primary btn-block" type="submit">Gửi liên kết</button>
+    </form>
+
+    <div class="auth-links">
+      <a href="/login">Quay lại đăng nhập</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

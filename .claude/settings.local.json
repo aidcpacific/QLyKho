@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node --version; npm --version)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; npm install)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node -e \"const {DatabaseSync}=require\\('node:sqlite'\\); const db=new DatabaseSync\\(':memory:'\\); db.exec\\('CREATE TABLE t\\(x\\)'\\); db.prepare\\('INSERT INTO t VALUES \\(?\\)'\\).run\\(42\\); console.log\\('node:sqlite OK ->', db.prepare\\('SELECT x FROM t'\\).get\\(\\).x\\);\")",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; npm install 2>&1 | Select-Object -Last 15)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; Start-Process -FilePath \"node\" -ArgumentList \"server.js\" -WorkingDirectory \"D:\\\\Webcode\" -RedirectStandardOutput \"D:\\\\Webcode\\\\server.out.log\" -RedirectStandardError \"D:\\\\Webcode\\\\server.err.log\" -WindowStyle Hidden; Start-Sleep -Seconds 3; Write-Output \"=== STDOUT ===\"; Get-Content \"D:\\\\Webcode\\\\server.out.log\" -ErrorAction SilentlyContinue; Write-Output \"=== STDERR ===\"; Get-Content \"D:\\\\Webcode\\\\server.err.log\" -ErrorAction SilentlyContinue)",
+      "PowerShell(cmd /c \"D:\\\\Webcode\\\\start.bat\" 2>&1)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; $proc = Start-Process -FilePath \"node\" -ArgumentList \"server.js\" -WorkingDirectory \"D:\\\\Webcode\" -RedirectStandardOutput \"D:\\\\Webcode\\\\_t.out\" -RedirectStandardError \"D:\\\\Webcode\\\\_t.err\" -WindowStyle Hidden -PassThru; Start-Sleep -Seconds 3; Write-Output \"=== OUT ===\"; Get-Content \"D:\\\\Webcode\\\\_t.out\"; Write-Output \"=== ERR ===\"; Get-Content \"D:\\\\Webcode\\\\_t.err\"; Write-Output \"=== HTTP test ===\"; try { \\(Invoke-WebRequest \"http://localhost:3000/login\" -UseBasicParsing\\).StatusCode } catch { $_.Exception.Message }; Stop-Process -Id $proc.Id -Force; Remove-Item \"D:\\\\Webcode\\\\_t.out\",\"D:\\\\Webcode\\\\_t.err\" -ErrorAction SilentlyContinue)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node -e \"const db=require\\('./db/database'\\); db.prepare\\('DELETE FROM users WHERE email=?'\\).run\\('tripheo_test@gmail.com'\\); const rows=db.prepare\\('SELECT id,email,role,email_verified FROM users'\\).all\\(\\); console.log\\('Tai khoan con lai:'\\); rows.forEach\\(u=>console.log\\('  -', u.email, '| role:', u.role, '| kich hoat:', u.email_verified\\)\\);\")"
+    ]
+  }
+}

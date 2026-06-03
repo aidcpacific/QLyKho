@@ -1,0 +1,22 @@
+<%- include('partials/header') %>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Xác thực 2 lớp</h1>
+    <p class="muted">Nhập mã 6 số đang hiển thị trong app Authenticator của bạn.</p>
+
+    <form action="/login/2fa" method="POST">
+      <label>Mã 2FA (6 số)</label>
+      <input type="text" name="code" inputmode="numeric" pattern="[0-9 ]*" maxlength="7"
+             autocomplete="one-time-code" autofocus required
+             class="otp-input" placeholder="123456">
+      <button class="btn btn-primary btn-block" type="submit">Xác nhận đăng nhập</button>
+    </form>
+
+    <div class="auth-links">
+      <a href="/login">← Quay lại đăng nhập</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <h1>Lịch sử: <%= item.name %></h1>
+  <a class="btn btn-ghost" href="/dashboard">← Quay lại</a>
+</div>
+
+<div class="table-wrap">
+  <table class="data-table">
+    <thead>
+      <tr><th>Thời gian</th><th>Loại</th><th>Số lượng</th><th>Ghi chú</th><th>Người thực hiện</th></tr>
+    </thead>
+    <tbody>
+      <% if (txns.length === 0) { %>
+        <tr><td colspan="5" class="empty">Chưa có giao dịch nào.</td></tr>
+      <% } %>
+      <% txns.forEach(function(t){ %>
+        <tr>
+          <td><%= t.created_at %></td>
+          <td><span class="<%= t.type === 'in' ? 'tag-in' : 'tag-out' %>"><%= t.type === 'in' ? 'Nhập' : 'Xuất' %></span></td>
+          <td><%= t.quantity %></td>
+          <td><%= t.note || '' %></td>
+          <td><%= t.full_name || t.email || 'N/A' %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('partials/footer') %>

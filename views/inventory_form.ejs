@@ -1,0 +1,181 @@
+<%- include('partials/header') %>
+
+<% var it = item || {}; var isEdit = !!item; %>
+<div class="page-head">
+  <h1><%= isEdit ? 'Sửa sản phẩm' : 'Thêm sản phẩm' %></h1>
+  <a class="btn btn-ghost" href="/dashboard">← Quay lại</a>
+</div>
+
+<form class="form-card" action="<%= isEdit ? '/inventory/' + it.id : '/inventory' %>" method="POST">
+
+  <!-- ===== Nhóm 1: Thông tin sản phẩm ===== -->
+  <h2 class="section-title">🏷️ Thông tin sản phẩm</h2>
+  <div class="grid">
+    <div class="field">
+      <label>SKU (mã hàng) <span class="hint">(để trống → tự tạo theo tên + số)</span></label>
+      <input type="text" id="sku" name="sku" value="<%= it.sku || '' %>" placeholder="B0XXXXXXXX">
+    </div>
+    <div class="field field-wide">
+      <label>Tên sản phẩm *</label>
+      <input type="text" name="name" required value="<%= it.name || '' %>" placeholder="Tên sản phẩm">
+    </div>
+    <div class="field">
+      <label>Danh mục</label>
+      <select name="category_id">
+        <option value="">— Chọn danh mục —</option>
+        <% (categories || []).forEach(function(c){ %>
+          <option value="<%= c.id %>" <%= it.category_id == c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }); %>
+      </select>
+      <a href="/danh-muc" target="_blank" class="mini-link">+ Thêm danh mục</a>
+    </div>
+    <div class="field">
+      <label>Màu sắc</label>
+      <input type="text" name="color" value="<%= it.color || '' %>" placeholder="Đỏ, Đen...">
+    </div>
+    <div class="field">
+      <label>Kích thước / Biến thể</label>
+      <input type="text" name="variant" value="<%= it.variant || '' %>" placeholder="S, M, L / 500ml...">
+    </div>
+    <div class="field">
+      <label>Phiên bản</label>
+      <input type="text" name="version" value="<%= it.version || '' %>" placeholder="2024, Pro...">
+    </div>
+    <div class="field">
+      <label>Giá nhập</label>
+      <input type="number" step="0.01" name="cost_price" value="<%= it.cost_price != null ? it.cost_price : '' %>" placeholder="0">
+    </div>
+    <div class="field">
+      <label>Giá bán</label>
+      <input type="number" step="0.01" name="sale_price" value="<%= it.sale_price != null ? it.sale_price : '' %>" placeholder="0">
+    </div>
+    <div class="field">
+      <label>Nhà cung cấp</label>
+      <select name="supplier_id">
+        <option value="">— Chọn nhà cung cấp —</option>
+        <% (suppliers || []).forEach(function(s){ %>
+          <option value="<%= s.id %>" <%= it.supplier_id == s.id ? 'selected' : '' %>><%= s.name %></option>
+        <% }); %>
+      </select>
+      <a href="/nha-cung-cap" target="_blank" class="mini-link">+ Thêm NCC</a>
+    </div>
+  </div>
+
+  <!-- ===== Nhóm 2: Tồn kho ===== -->
+  <h2 class="section-title">📦 Tồn kho</h2>
+  <div class="grid">
+    <div class="field">
+      <label>Số lượng hiện có</label>
+      <input type="number" id="qty" name="quantity" min="0" value="<%= it.quantity != null ? it.quantity : 0 %>">
+    </div>
+    <div class="field">
+      <label>Số lượng đã đặt hàng <span class="hint">(đang về)</span></label>
+      <input type="number" id="onorder" name="on_order" min="0" value="<%= it.on_order != null ? it.on_order : 0 %>">
+    </div>
+    <div class="field">
+      <label>Số lượng khả dụng <span class="hint">(tự tính = hiện có + đã đặt)</span></label>
+      <input type="number" id="available" value="0" readonly class="readonly">
+    </div>
+    <div class="field">
+      <label>Tồn tối thiểu <span class="hint">(cảnh báo khi ≤ mức này)</span></label>
+      <input type="number" name="min_quantity" min="0" value="<%= it.min_quantity != null ? it.min_quantity : 0 %>" placeholder="0 = tắt">
+    </div>
+    <div class="field">
+      <label>Tồn tối đa</label>
+      <input type="number" name="max_quantity" min="0" value="<%= it.max_quantity != null ? it.max_quantity : 0 %>" placeholder="0 = không giới hạn">
+    </div>
+  </div>
+
+  <!-- ===== Nhóm 3: Vận chuyển / Nhập hàng ===== -->
+  <h2 class="section-title">🚚 Vận chuyển / Nhập hàng</h2>
+  <div class="grid">
+    <div class="field">
+      <label>Inbound ID</label>
+      <input type="text" name="inbound_id" value="<%= it.inbound_id || '' %>" placeholder="Tự sinh nếu trống">
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="text" name="date" value="<%= it.date || '' %>" placeholder="2026-06-02">
+    </div>
+    <div class="field">
+      <label>Kích thước kiện</label>
+      <input type="text" name="size" value="<%= it.size || '' %>" placeholder="21 x 12 x 11 in">
+    </div>
+    <div class="field">
+      <label>Trọng lượng</label>
+      <input type="text" name="weight" value="<%= it.weight || '' %>" placeholder="1.88 lbs">
+    </div>
+    <div class="field">
+      <label>Tracking number</label>
+      <input type="text" name="tracking" value="<%= it.tracking || '' %>" placeholder="9200...">
+    </div>
+    <div class="field">
+      <label>Đơn vị vận chuyển</label>
+      <input type="text" name="carrier" value="<%= it.carrier || '' %>" placeholder="USPS, GHN, GHTK...">
+    </div>
+    <div class="field">
+      <label>Ngày đến dự kiến</label>
+      <input type="text" name="eta" value="<%= it.eta || '' %>" placeholder="2026-06-06">
+    </div>
+    <div class="field field-wide">
+      <label>Link sản phẩm <span class="hint">(dán link Amazon → tự điền SKU)</span></label>
+      <input type="text" id="product_url" name="product_url" value="<%= it.product_url || '' %>" placeholder="https://www.amazon.com/dp/B0EB4ADQW9">
+      <div id="sku-status" class="sku-status"></div>
+    </div>
+    <div class="field field-wide">
+      <label>Hình ảnh sản phẩm (URL)</label>
+      <input type="text" name="image_url" value="<%= it.image_url || '' %>" placeholder="https://...">
+    </div>
+  </div>
+
+  <button class="btn btn-primary" type="submit"><%= isEdit ? 'Lưu thay đổi' : 'Thêm sản phẩm' %></button>
+</form>
+
+<script>
+(function () {
+  // 1) Tự tính khả dụng = hiện có + đã đặt
+  var qty = document.getElementById('qty');
+  var onorder = document.getElementById('onorder');
+  var avail = document.getElementById('available');
+  function calcAvail() {
+    var a = (parseInt(qty.value, 10) || 0) + (parseInt(onorder.value, 10) || 0);
+    avail.value = a;
+  }
+  qty.addEventListener('input', calcAvail);
+  onorder.addEventListener('input', calcAvail);
+  calcAvail();
+
+  // 2) Tự bóc SKU (ASIN) từ link sản phẩm
+  var urlInput = document.getElementById('product_url');
+  var skuInput = document.getElementById('sku');
+  var status = document.getElementById('sku-status');
+  function extractSku(u) {
+    if (!u) return '';
+    var m = u.match(/(?:\/dp\/|\/gp\/product\/|\/product\/|\/ASIN\/|[?&]asin=)([A-Z0-9]{10})/i);
+    if (m) return m[1].toUpperCase();
+    var b = u.match(/\b(B0[A-Z0-9]{8})\b/i);
+    if (b) return b[1].toUpperCase();
+    return '';
+  }
+  function fill() {
+    var sku = extractSku(urlInput.value.trim());
+    if (sku) {
+      if (!skuInput.value.trim()) {
+        skuInput.value = sku;
+        status.textContent = '✓ Đã tự điền SKU: ' + sku;
+        status.className = 'sku-status ok';
+      } else {
+        status.textContent = 'Tìm thấy SKU ' + sku + ' (ô SKU đã có sẵn, không ghi đè).';
+        status.className = 'sku-status';
+      }
+    } else if (urlInput.value.trim()) {
+      status.textContent = 'Link không có mã SKU — nếu để trống, hệ thống sẽ tự tạo SKU theo tên sản phẩm.';
+      status.className = 'sku-status warn';
+    } else { status.textContent = ''; }
+  }
+  urlInput.addEventListener('input', fill);
+  urlInput.addEventListener('paste', function () { setTimeout(fill, 50); });
+})();
+</script>
+
+<%- include('partials/footer') %>

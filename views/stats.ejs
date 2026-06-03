@@ -1,0 +1,142 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <h1>📊 Thống kê kho hàng</h1>
+  <a class="btn btn-ghost" href="/dashboard">← Về quản lý kho</a>
+</div>
+
+<!-- Tổng quan -->
+<div class="stats">
+  <div class="stat-card"><div class="stat-num"><%= overview.totalItems %></div><div class="stat-label">Mặt hàng</div></div>
+  <div class="stat-card stat-onhand"><div class="stat-num"><%= overview.onHand %></div><div class="stat-label">Hiện có</div></div>
+  <div class="stat-card stat-in"><div class="stat-num"><%= overview.onOrder %></div><div class="stat-label">Đã đặt hàng</div></div>
+  <div class="stat-card stat-avail"><div class="stat-num"><%= overview.available %></div><div class="stat-label">Khả dụng</div></div>
+  <div class="stat-card"><div class="stat-num"><%= Number(overview.costValue).toLocaleString('vi-VN') %></div><div class="stat-label">Giá trị nhập</div></div>
+  <div class="stat-card"><div class="stat-num"><%= Number(overview.saleValue).toLocaleString('vi-VN') %></div><div class="stat-label">Giá trị bán</div></div>
+  <div class="stat-card stat-avail"><div class="stat-num"><%= Number(overview.profit).toLocaleString('vi-VN') %></div><div class="stat-label">Lợi nhuận dự kiến</div></div>
+  <div class="stat-card <%= overview.lowStock > 0 ? 'stat-warn' : '' %>"><div class="stat-num"><%= overview.lowStock %></div><div class="stat-label">⚠ Sắp hết hàng</div></div>
+</div>
+
+<div class="stats-grid">
+  <!-- Nhập/Xuất theo ngày -->
+  <div class="panel">
+    <h2>Nhập / Xuất theo ngày</h2>
+    <% if (byDay.length === 0) { %>
+      <p class="muted">Chưa có giao dịch.</p>
+    <% } else {
+         var maxDay = 1; byDay.forEach(function(d){ maxDay = Math.max(maxDay, d.qin, d.qout); }); %>
+      <div class="legend"><span class="dot dot-in"></span> Nhập <span class="dot dot-out"></span> Xuất</div>
+      <div class="daychart">
+        <% byDay.forEach(function(d){ %>
+          <div class="daycol">
+            <div class="daybars">
+              <div class="daybar bar-in"  style="height: <%= Math.round(d.qin / maxDay * 100) %>%" title="Nhập: <%= d.qin %>"></div>
+              <div class="daybar bar-out" style="height: <%= Math.round(d.qout / maxDay * 100) %>%" title="Xuất: <%= d.qout %>"></div>
+            </div>
+            <div class="daylabel"><%= d.day ? d.day.slice(5) : '' %></div>
+          </div>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+
+  <!-- Theo danh mục -->
+  <div class="panel">
+    <h2>Theo danh mục</h2>
+    <% if (byCategory.length === 0) { %><p class="muted">Chưa có dữ liệu.</p><% } else {
+         var maxCat = 1; byCategory.forEach(function(c){ maxCat = Math.max(maxCat, c.cnt); }); %>
+      <% byCategory.forEach(function(c){ %>
+        <div class="hbar-row">
+          <div class="hbar-label" title="<%= c.category %>"><%= c.category %></div>
+          <div class="hbar-track"><div class="hbar-fill" style="width: <%= Math.round(c.cnt / maxCat * 100) %>%"></div></div>
+          <div class="hbar-val"><%= c.cnt %> mặt hàng</div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Theo nhà cung cấp -->
+  <div class="panel">
+    <h2>Theo nhà cung cấp</h2>
+    <% if (bySupplier.length === 0) { %><p class="muted">Chưa có dữ liệu.</p><% } else {
+         var maxSup = 1; bySupplier.forEach(function(s){ maxSup = Math.max(maxSup, s.cnt); }); %>
+      <% bySupplier.forEach(function(s){ %>
+        <div class="hbar-row">
+          <div class="hbar-label" title="<%= s.supplier %>"><%= s.supplier %></div>
+          <div class="hbar-track"><div class="hbar-fill fill-purple" style="width: <%= Math.round(s.cnt / maxSup * 100) %>%"></div></div>
+          <div class="hbar-val"><%= s.cnt %> mặt hàng</div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Top tồn kho -->
+  <div class="panel">
+    <h2>Top tồn kho nhiều nhất</h2>
+    <% if (topStock.length === 0) { %><p class="muted">Chưa có dữ liệu.</p><% } else {
+         var maxS = 1; topStock.forEach(function(s){ maxS = Math.max(maxS, s.quantity); }); %>
+      <% topStock.forEach(function(s){ %>
+        <div class="hbar-row">
+          <div class="hbar-label" title="<%= s.name %>"><%= s.name %></div>
+          <div class="hbar-track"><div class="hbar-fill fill-green" style="width: <%= Math.round(s.quantity / maxS * 100) %>%"></div></div>
+          <div class="hbar-val"><%= s.quantity %></div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Top giá trị tồn -->
+  <div class="panel">
+    <h2>Top giá trị tồn cao nhất</h2>
+    <% if (topValue.length === 0) { %><p class="muted">Chưa có dữ liệu.</p><% } else {
+         var maxV = 1; topValue.forEach(function(v){ maxV = Math.max(maxV, v.total_value); }); %>
+      <% topValue.forEach(function(v){ %>
+        <div class="hbar-row">
+          <div class="hbar-label" title="<%= v.name %>"><%= v.name %></div>
+          <div class="hbar-track"><div class="hbar-fill fill-purple" style="width: <%= Math.round(v.total_value / maxV * 100) %>%"></div></div>
+          <div class="hbar-val">$<%= Number(v.total_value).toLocaleString('en-US') %></div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Sắp hết hàng -->
+  <div class="panel">
+    <h2>⚠ Sắp hết hàng</h2>
+    <% if (lowStock.length === 0) { %>
+      <p class="muted">Không có mặt hàng nào dưới ngưỡng cảnh báo.</p>
+    <% } else { %>
+      <table class="mini-table">
+        <thead><tr><th>Sản phẩm</th><th>SKU</th><th>Tồn</th><th>Ngưỡng</th></tr></thead>
+        <tbody>
+          <% lowStock.forEach(function(l){ %>
+            <tr><td><%= l.name %></td><td><code><%= l.sku || '' %></code></td><td class="text-danger"><b><%= l.quantity %></b></td><td><%= l.min_quantity %></td></tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <!-- Giao dịch gần đây -->
+  <div class="panel">
+    <h2>Giao dịch gần đây</h2>
+    <% if (recent.length === 0) { %><p class="muted">Chưa có giao dịch.</p><% } else { %>
+      <table class="mini-table">
+        <thead><tr><th>Thời gian</th><th>Loại</th><th>SL</th><th>Sản phẩm</th><th>Người làm</th></tr></thead>
+        <tbody>
+          <% recent.forEach(function(t){ %>
+            <tr>
+              <td><%= t.created_at %></td>
+              <td><span class="<%= t.type === 'in' ? 'tag-in' : 'tag-out' %>"><%= t.type === 'in' ? 'Nhập' : 'Xuất' %></span></td>
+              <td><%= t.quantity %></td>
+              <td><%= t.item_name || '(đã xóa)' %></td>
+              <td><%= t.full_name || t.email || 'N/A' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

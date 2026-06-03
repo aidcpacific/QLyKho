@@ -1,0 +1,41 @@
+<%- include('partials/header') %>
+
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Đăng ký</h1>
+    <p class="muted">Tạo tài khoản để quản lý kho hàng.</p>
+
+    <% var f = (typeof form !== 'undefined' && form) ? form : {}; %>
+    <form action="/register" method="POST">
+      <label>Họ và tên *</label>
+      <input type="text" name="full_name" required value="<%= f.full_name || '' %>" placeholder="Nguyễn Văn A">
+
+      <label>Tên đăng nhập (tùy chọn)</label>
+      <input type="text" name="username" value="<%= f.username || '' %>" placeholder="username">
+
+      <label>Email *</label>
+      <input type="email" name="email" required value="<%= f.email || '' %>" placeholder="email@example.com">
+
+      <label>Mật khẩu * (ít nhất 6 ký tự)</label>
+      <input type="password" name="password" required placeholder="••••••••">
+
+      <label>Nhập lại mật khẩu *</label>
+      <input type="password" name="password2" required placeholder="••••••••">
+
+      <button class="btn btn-primary btn-block" type="submit">Đăng ký</button>
+    </form>
+
+    <% if (googleEnabled) { %>
+      <div class="divider"><span>hoặc</span></div>
+      <a class="btn btn-google btn-block" href="/auth/google">
+        <span class="g-logo">G</span> Đăng ký bằng Google
+      </a>
+    <% } %>
+
+    <div class="auth-links">
+      <a href="/login">Đã có tài khoản? Đăng nhập</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

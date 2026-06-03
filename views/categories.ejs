@@ -1,0 +1,50 @@
+<%- include('partials/header') %>
+
+<div class="page-head">
+  <h1>🗂️ Danh mục sản phẩm</h1>
+  <a class="btn btn-ghost" href="/dashboard">← Về quản lý kho</a>
+</div>
+
+<div class="two-col">
+  <div class="panel">
+    <h2>Thêm danh mục mới</h2>
+    <form action="/danh-muc" method="POST">
+      <label>Tên danh mục *</label>
+      <input type="text" name="name" required placeholder="VD: Đồ điện tử, Thực phẩm...">
+      <label>Ghi chú</label>
+      <input type="text" name="note" placeholder="(tùy chọn)">
+      <button class="btn btn-primary btn-block" type="submit">Thêm danh mục</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h2>Danh sách (<%= categories.length %>)</h2>
+    <table class="mini-table">
+      <thead><tr><th>Tên</th><th>Ghi chú</th><th>SL sản phẩm</th><th></th></tr></thead>
+      <tbody>
+        <% if (categories.length === 0) { %><tr><td colspan="4" class="empty">Chưa có danh mục.</td></tr><% } %>
+        <% categories.forEach(function(c){ %>
+          <tr>
+            <td>
+              <form action="/danh-muc/<%= c.id %>" method="POST" class="inline-edit">
+                <input type="text" name="name" value="<%= c.name %>">
+            </td>
+            <td><input type="text" name="note" value="<%= c.note || '' %>" placeholder="—"></td>
+            <td><%= c.product_count %></td>
+            <td class="row-actions">
+                <button type="submit" class="link">Lưu</button>
+              </form>
+              <% if (user.role === 'admin') { %>
+                <form action="/danh-muc/<%= c.id %>/delete" method="POST" onsubmit="return confirm('Xóa danh mục \'<%= c.name %>\'?')" style="display:inline">
+                  <button type="submit" class="link link-danger">Xóa</button>
+                </form>
+              <% } %>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

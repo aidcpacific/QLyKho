@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node _qa.js count; Remove-Item \"D:\\\\Webcode\\\\_qa.js\" -ErrorAction SilentlyContinue; Write-Output \"Da don file tam. Server dang chay tai http://localhost:3000\")",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; npm install otplib qrcode 2>&1 | Select-Object -Last 6)",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node -e \"const {authenticator}=require\\('otplib'\\); const QR=require\\('qrcode'\\); const s=authenticator.generateSecret\\(\\); const t=authenticator.generate\\(s\\); console.log\\('secret len:',s.length,'| token:',t,'| verify:',authenticator.verify\\({token:t,secret:s}\\)\\); QR.toDataURL\\('otpauth://totp/Test?secret='+s\\).then\\(d=>console.log\\('QR data url ok, len:',d.length\\)\\);\")",
+      "Bash(node -e \"const o=require\\('otplib'\\); console.log\\('keys:', Object.keys\\(o\\)\\);\")",
+      "PowerShell($env:Path = \"C:\\\\Program Files\\\\nodejs;\" + $env:Path; node -e \"const o=require\\('otplib'\\); console.log\\('keys:', Object.keys\\(o\\)\\);\")",
+      "Bash(grep -nA3 -iE 'generateSecret|generateURI|verify|generate\\\\\\(|import|require|example')"
+    ]
+  }
+}

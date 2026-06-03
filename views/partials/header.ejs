@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %> · <%= appName %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<% if (typeof user !== 'undefined' && user) { %>
+  <nav class="navbar">
+    <a class="brand" href="/dashboard">📦 <%= appName %></a>
+    <div class="nav-links">
+      <a href="/dashboard">Quản lý kho</a>
+      <a href="/danh-muc">Danh mục</a>
+      <a href="/nha-cung-cap">Nhà cung cấp</a>
+      <a href="/thong-ke">Thống kê</a>
+    </div>
+    <div class="nav-right">
+      <a href="/setup-2fa" class="nav-2fa" title="Bảo mật 2 lớp">🔒 2FA</a>
+      <span class="user-chip">
+        <%= user.full_name || user.username || user.email %>
+        <span class="role-badge role-<%= user.role %>"><%= user.role === 'admin' ? 'Admin' : 'Nhân viên' %></span>
+      </span>
+      <form action="/logout" method="POST" style="display:inline">
+        <button class="btn btn-ghost" type="submit">Đăng xuất</button>
+      </form>
+    </div>
+  </nav>
+<% } %>
+
+<div class="container">
+  <% if (typeof messages !== 'undefined') { %>
+    <% (messages.success || []).forEach(function(m){ %><div class="alert alert-success"><%= m %></div><% }); %>
+    <% (messages.error   || []).forEach(function(m){ %><div class="alert alert-error"><%= m %></div><% }); %>
+  <% } %>
+  <% if (typeof errors !== 'undefined' && errors) { %>
+    <% errors.forEach(function(e){ %><div class="alert alert-error"><%= e %></div><% }); %>
+  <% } %>
