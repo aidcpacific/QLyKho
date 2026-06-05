@@ -85,6 +85,32 @@
     <% } %>
   </div>
 
+  <!-- Top lợi nhuận tối ưu -->
+  <div class="panel">
+    <h2>💰 Top lợi nhuận tối ưu</h2>
+    <p class="muted" style="margin:-6px 0 10px">Xếp theo biên lợi nhuận (giá bán so với giá nhập).</p>
+    <% if (topProfit.length === 0) { %>
+      <p class="muted">Chưa có sản phẩm nào nhập đủ giá nhập + giá bán.</p>
+    <% } else { %>
+      <table class="mini-table">
+        <thead><tr><th>Sản phẩm</th><th>Giá nhập</th><th>Giá bán</th><th>LN/cái</th><th>Biên LN</th></tr></thead>
+        <tbody>
+          <% topProfit.forEach(function(p){
+               var m = Number(p.margin);
+               var mcls = m < 0 ? 'text-danger' : (m < 10 ? '' : 'opt-margin good'); %>
+            <tr>
+              <td><%= p.name %><% if (p.sku) { %> <code><%= p.sku %></code><% } %></td>
+              <td><%= Number(p.cost_price).toLocaleString('vi-VN') %></td>
+              <td><%= Number(p.sale_price).toLocaleString('vi-VN') %></td>
+              <td><b><%= Number(p.profit).toLocaleString('vi-VN') %></b></td>
+              <td class="<%= mcls %>"><b><%= m.toFixed(0) %>%</b></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
   <!-- Top giá trị tồn -->
   <div class="panel">
     <h2>Top giá trị tồn cao nhất</h2>

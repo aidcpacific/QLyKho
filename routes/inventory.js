@@ -412,6 +412,16 @@ router.get('/thong-ke', ensureAuth, async (req, res, next) => {
     overview.profit = Number(overview.saleValue) - Number(overview.costValue);
 
     const topStock = await db.prepare('SELECT name, sku, quantity FROM inventory ORDER BY quantity DESC LIMIT 8').all();
+
+    // Top lợi nhuận tối ưu: xếp theo biên lợi nhuận (giá bán so với giá nhập)
+    const topProfit = await db.prepare(`
+      SELECT name, sku, cost_price, sale_price,
+             (sale_price - cost_price) AS profit,
+             CASE WHEN sale_price > 0 THEN (sale_price - cost_price) * 100.0 / sale_price ELSE 0 END AS margin
+      FROM inventory
+      WHERE cost_price IS NOT NULL AND cost_price > 0 AND sale_price IS NOT NULL AND sale_price > 0
+      ORDER BY margin DESC, profit DESC LIMIT 8
+    `).all();
     const topValue = await db.prepare(`
       SELECT name, sku, quantity, (COALESCE(sale_price,0) * quantity) AS total_value
       FROM inventory ORDER BY total_value DESC LIMIT 8
@@ -449,7 +459,7 @@ router.get('/thong-ke', ensureAuth, async (req, res, next) => {
       ORDER BY t.id DESC LIMIT 10
     `).all();
 
-    res.render('stats', { title: 'Thống kê', overview, topStock, topValue, byCategory, bySupplier, byDay, lowStock, recent });
+    res.render('stats', { title: 'Thống kê', overview, topStock, topProfit, topValue, byCategory, bySupplier, byDay, lowStock, recent });
   } catch (e) { next(e); }
 });
 
