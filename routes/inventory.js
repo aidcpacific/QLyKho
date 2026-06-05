@@ -77,29 +77,41 @@ const SELECT_ITEM = `
 router.get('/dashboard', ensureAuth, async (req, res, next) => {
   try {
     const q = (req.query.q || '').trim();
-    let items;
+    const fStatus = (req.query.status || '').trim();
+    const fSupplier = (req.query.supplier || '').trim();
+    const fCategory = (req.query.category || '').trim();
+
+    // Xây điều kiện lọc động
+    const where = [];
+    const args = [];
     if (q) {
       const like = `%${q}%`;
-      items = await db.prepare(`${SELECT_ITEM}
-        WHERE i.name LIKE ? OR i.sku LIKE ? OR i.inbound_id LIKE ? OR i.tracking LIKE ?
-           OR i.category LIKE ? OR s.name LIKE ?
-        ORDER BY i.id DESC
-      `).all(like, like, like, like, like, like);
-    } else {
-      items = await db.prepare(`${SELECT_ITEM} ORDER BY i.id DESC`).all();
+      where.push('(i.name LIKE ? OR i.sku LIKE ? OR i.inbound_id LIKE ? OR i.tracking LIKE ? OR i.category LIKE ? OR s.name LIKE ? OR i.address LIKE ?)');
+      args.push(like, like, like, like, like, like, like);
     }
+    if (fStatus) { where.push('i.status = ?'); args.push(fStatus); }
+    if (fSupplier) { where.push('i.supplier_id = ?'); args.push(parseInt(fSupplier, 10)); }
+    if (fCategory) { where.push('i.category = ?'); args.push(fCategory); }
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+
+    const items = await db.prepare(`${SELECT_ITEM} ${whereSql} ORDER BY i.id DESC`).all(...args);
     items.forEach((it) => { it.tracking_url = buildTrackingUrl(it.carrier, it.tracking); });
 
+    // Thống kê tổng quan (toàn kho)
     const stats = {
       totalItems: (await db.prepare('SELECT COUNT(*) AS c FROM inventory').get()).c,
-      onHand:   (await db.prepare('SELECT COALESCE(SUM(quantity),0) AS s FROM inventory').get()).s,
-      onOrder:  (await db.prepare('SELECT COALESCE(SUM(on_order),0) AS s FROM inventory').get()).s,
-      available: (await db.prepare('SELECT COALESCE(SUM(quantity + on_order),0) AS s FROM inventory').get()).s,
-      saleValue: (await db.prepare('SELECT COALESCE(SUM(sale_price * quantity),0) AS s FROM inventory').get()).s,
-      lowStock: (await db.prepare('SELECT COUNT(*) AS c FROM inventory WHERE min_quantity > 0 AND quantity <= min_quantity').get()).c,
+      totalQty:   (await db.prepare('SELECT COALESCE(SUM(quantity),0) AS s FROM inventory').get()).s,
+      totalCost:  (await db.prepare('SELECT COALESCE(SUM(COALESCE(original_price,0) * quantity),0) AS s FROM inventory').get()).s,
     };
 
-    res.render('dashboard', { title: 'Quản lý kho', items, stats, q, statuses: STATUSES, statusClass: STATUS_CLASS });
+    const suppliers = await db.prepare('SELECT id, name FROM suppliers ORDER BY name').all();
+
+    res.render('dashboard', {
+      title: 'Quản lý kho', items, stats, q,
+      fStatus, fSupplier, fCategory,
+      statuses: STATUSES, statusClass: STATUS_CLASS,
+      suppliers, categories: DEFAULT_CATEGORIES,
+    });
   } catch (e) { next(e); }
 });
 

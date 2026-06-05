@@ -10,18 +10,27 @@
 </div>
 
 <div class="stats">
-  <div class="stat-card"><div class="stat-num"><%= stats.totalItems %></div><div class="stat-label">Mặt hàng</div></div>
-  <div class="stat-card stat-onhand"><div class="stat-num"><%= stats.onHand %></div><div class="stat-label">Số lượng hiện có</div></div>
-  <div class="stat-card stat-in"><div class="stat-num"><%= stats.onOrder %></div><div class="stat-label">Đã đặt hàng</div></div>
-  <div class="stat-card stat-avail"><div class="stat-num"><%= stats.available %></div><div class="stat-label">Khả dụng</div></div>
-  <div class="stat-card"><div class="stat-num"><%= Number(stats.saleValue).toLocaleString('vi-VN') %></div><div class="stat-label">Giá trị tồn (giá bán)</div></div>
-  <div class="stat-card <%= stats.lowStock > 0 ? 'stat-warn' : '' %>"><div class="stat-num"><%= stats.lowStock %></div><div class="stat-label">⚠ Sắp hết hàng</div></div>
+  <div class="stat-card"><div class="stat-num"><%= stats.totalItems %></div><div class="stat-label">Tổng mặt hàng</div></div>
+  <div class="stat-card stat-onhand"><div class="stat-num"><%= stats.totalQty %></div><div class="stat-label">Tổng số lượng</div></div>
+  <div class="stat-card stat-avail"><div class="stat-num"><%= Number(stats.totalCost).toLocaleString('vi-VN') %></div><div class="stat-label">Tổng tiền gốc</div></div>
 </div>
 
-<form class="search-bar" action="/dashboard" method="GET">
-  <input type="text" name="q" value="<%= q %>" placeholder="Tìm theo tên, SKU, Inbound ID, tracking...">
-  <button class="btn btn-primary" type="submit">Tìm</button>
-  <% if (q) { %><a class="btn btn-ghost" href="/dashboard">Xóa lọc</a><% } %>
+<form class="filter-bar" action="/dashboard" method="GET">
+  <input type="text" name="q" value="<%= q %>" placeholder="Tìm theo tên, SKU, Inbound ID, tracking, địa chỉ...">
+  <select name="status">
+    <option value="">— Trạng thái —</option>
+    <% (statuses || []).forEach(function(s){ %><option value="<%= s %>" <%= fStatus === s ? 'selected' : '' %>><%= s %></option><% }); %>
+  </select>
+  <select name="supplier">
+    <option value="">— Nhà Kho —</option>
+    <% (suppliers || []).forEach(function(s){ %><option value="<%= s.id %>" <%= String(fSupplier) === String(s.id) ? 'selected' : '' %>><%= s.name %></option><% }); %>
+  </select>
+  <select name="category">
+    <option value="">— Danh mục —</option>
+    <% (categories || []).forEach(function(c){ %><option value="<%= c %>" <%= fCategory === c ? 'selected' : '' %>><%= c %></option><% }); %>
+  </select>
+  <button class="btn btn-primary" type="submit">Lọc</button>
+  <% if (q || fStatus || fSupplier || fCategory) { %><a class="btn btn-ghost" href="/dashboard">Xóa lọc</a><% } %>
 </form>
 
 <!-- Thanh thao tác hàng loạt (hiện khi tích chọn) -->
@@ -61,13 +70,14 @@
         <th>Hiện có</th>
         <th title="Giá bán đề xuất (biên lợi nhuận ~30% so với giá nhập)">Giá tối ưu</th>
         <th>Tracking</th>
+        <th>Địa chỉ</th>
         <th>Trạng thái</th>
         <th class="col-actions">Thao tác</th>
       </tr>
     </thead>
     <tbody>
     <% if (items.length === 0) { %>
-      <tr><td colspan="14" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
+      <tr><td colspan="15" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
     <% } %>
     <% items.forEach(function(it){ var low = (it.min_quantity > 0 && it.quantity <= it.min_quantity); %>
       <tr class="<%= low ? 'row-low' : '' %>">
@@ -107,6 +117,7 @@
             </a>
           <% } else { %><%= it.tracking || '' %><% } %>
         </td>
+        <td class="addr-cell" title="<%= it.address || '' %>"><%= it.address || '' %></td>
         <td>
           <% var st = it.status || (statuses && statuses[0]) || '';
              var stcls = (statusClass && statusClass[st]) || 'st-new'; %>
