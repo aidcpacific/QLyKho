@@ -21,13 +21,12 @@
     </div>
     <div class="field">
       <label>Danh mục</label>
-      <select name="category_id">
+      <select name="category">
         <option value="">— Chọn danh mục —</option>
         <% (categories || []).forEach(function(c){ %>
-          <option value="<%= c.id %>" <%= it.category_id == c.id ? 'selected' : '' %>><%= c.name %></option>
+          <option value="<%= c %>" <%= (it.category || '') === c ? 'selected' : '' %>><%= c %></option>
         <% }); %>
       </select>
-      <a href="/danh-muc" target="_blank" class="mini-link">+ Thêm danh mục</a>
     </div>
     <div class="field">
       <label>Màu sắc</label>

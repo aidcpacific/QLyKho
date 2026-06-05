@@ -7,6 +7,7 @@ const { ensureAuth, ensureAdmin } = require('../middleware/auth');
 const mailer = require('../utils/mailer');
 const { buildTrackingUrl, extractSku } = require('../utils/helpers');
 const { COLUMNS, toCsv, parseTable, looksLikeHeader } = require('../utils/csv');
+const { DEFAULT_CATEGORIES } = require('../utils/constants');
 
 async function getAdminEmails() {
   const rows = await db.prepare("SELECT email FROM users WHERE role = 'admin'").all();
@@ -56,14 +57,6 @@ async function resolveSku(manual, url, name, fallbackSku) {
   if (sku) return sku;
   return fallbackSku || (await generateSku(name));
 }
-// Tìm danh mục theo tên, tạo mới nếu chưa có (dùng cho nhập hàng loạt)
-async function resolveCategoryId(name) {
-  name = (name || '').trim();
-  if (!name) return null;
-  let row = await db.prepare('SELECT id FROM categories WHERE name = ?').get(name);
-  if (!row) row = { id: (await db.prepare('INSERT INTO categories (name) VALUES (?)').run(name)).lastInsertRowid };
-  return row.id;
-}
 async function resolveSupplierId(name) {
   name = (name || '').trim();
   if (!name) return null;
@@ -72,13 +65,12 @@ async function resolveSupplierId(name) {
   return row.id;
 }
 
-// Câu SELECT chuẩn kèm tên danh mục + nhà cung cấp + số khả dụng
+// Câu SELECT chuẩn kèm tên nhà kho + số khả dụng (danh mục lưu text trong i.category)
 const SELECT_ITEM = `
-  SELECT i.*, c.name AS category, s.name AS supplier,
+  SELECT i.*, s.name AS supplier,
          (i.quantity + i.on_order) AS available
   FROM inventory i
-  LEFT JOIN categories c ON c.id = i.category_id
-  LEFT JOIN suppliers  s ON s.id = i.supplier_id
+  LEFT JOIN suppliers s ON s.id = i.supplier_id
 `;
 
 // ===================== DANH SÁCH / DASHBOARD =====================
@@ -90,7 +82,7 @@ router.get('/dashboard', ensureAuth, async (req, res, next) => {
       const like = `%${q}%`;
       items = await db.prepare(`${SELECT_ITEM}
         WHERE i.name LIKE ? OR i.sku LIKE ? OR i.inbound_id LIKE ? OR i.tracking LIKE ?
-           OR c.name LIKE ? OR s.name LIKE ?
+           OR i.category LIKE ? OR s.name LIKE ?
         ORDER BY i.id DESC
       `).all(like, like, like, like, like, like);
     } else {
@@ -142,7 +134,7 @@ router.post('/inventory/import', ensureAuth, async (req, res, next) => {
 
     const insert = db.prepare(`
       INSERT INTO inventory
-        (sku, name, category_id, color, variant, version, cost_price, sale_price, supplier_id,
+        (sku, name, category, color, variant, version, cost_price, sale_price, supplier_id,
          quantity, on_order, min_quantity, max_quantity,
          inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, address, status, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -170,7 +162,7 @@ router.post('/inventory/import', ensureAuth, async (req, res, next) => {
 
       try {
         const info = await insert.run(
-          sku, name, await resolveCategoryId(g(2)), g(3) || null, g(4) || null, g(5) || null,
+          sku, name, g(2) || null, g(3) || null, g(4) || null, g(5) || null,
           g(6) ? num(g(6)) : null, g(7) ? num(g(7)) : null, await resolveSupplierId(g(8)),
           qty, Math.round(num(g(10))), Math.round(num(g(11))), Math.round(num(g(12))),
           inboundId, g(14) || null, g(15) || null, g(16) || null,
@@ -188,10 +180,13 @@ router.post('/inventory/import', ensureAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Danh sách dropdown cho form
-async function dropdownData() {
+// Danh sách dropdown cho form. Danh mục dùng danh sách cố định (DEFAULT_CATEGORIES).
+async function dropdownData(currentCategory) {
+  // Gộp thêm danh mục hiện tại của sản phẩm nếu nó không nằm trong danh sách mặc định
+  const categories = DEFAULT_CATEGORIES.slice();
+  if (currentCategory && !categories.includes(currentCategory)) categories.unshift(currentCategory);
   return {
-    categories: await db.prepare('SELECT id, name FROM categories ORDER BY name').all(),
+    categories,
     suppliers: await db.prepare('SELECT id, name FROM suppliers ORDER BY name').all(),
     statuses: STATUSES,
   };
@@ -221,12 +216,12 @@ router.post('/inventory', ensureAuth, async (req, res, next) => {
 
     const info = await db.prepare(`
       INSERT INTO inventory
-        (sku, name, category_id, color, variant, version, cost_price, sale_price, supplier_id,
+        (sku, name, category, color, variant, version, cost_price, sale_price, supplier_id,
          quantity, on_order, min_quantity, max_quantity,
          inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, address, status, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      sku, b.name.trim(), intOrNull(b.category_id), b.color || null, b.variant || null, b.version || null,
+      sku, b.name.trim(), b.category || null, b.color || null, b.variant || null, b.version || null,
       b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
       qty, Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       inboundId, b.date || null, b.size || null, b.weight || null,
@@ -284,7 +279,7 @@ router.get('/inventory/:id/edit', ensureAuth, async (req, res, next) => {
       req.flash('error', 'Không tìm thấy sản phẩm.');
       return res.redirect('/dashboard');
     }
-    res.render('inventory_form', Object.assign({ title: 'Sửa sản phẩm', item }, await dropdownData()));
+    res.render('inventory_form', Object.assign({ title: 'Sửa sản phẩm', item }, await dropdownData(item.category)));
   } catch (e) { next(e); }
 });
 
@@ -300,14 +295,14 @@ router.post('/inventory/:id', ensureAuth, async (req, res, next) => {
     const sku = await resolveSku(b.sku, b.product_url, b.name.trim(), item.sku);
     await db.prepare(`
       UPDATE inventory SET
-        sku = ?, name = ?, category_id = ?, color = ?, variant = ?, version = ?,
+        sku = ?, name = ?, category = ?, color = ?, variant = ?, version = ?,
         cost_price = ?, sale_price = ?, supplier_id = ?,
         quantity = ?, on_order = ?, min_quantity = ?, max_quantity = ?,
         inbound_id = ?, date = ?, size = ?, weight = ?, tracking = ?, carrier = ?, eta = ?,
         product_url = ?, image_url = ?, address = ?, status = ?, updated_at = datetime('now','localtime')
       WHERE id = ?
     `).run(
-      sku, b.name.trim(), intOrNull(b.category_id), b.color || null, b.variant || null, b.version || null,
+      sku, b.name.trim(), b.category || null, b.color || null, b.variant || null, b.version || null,
       b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
       Math.round(num(b.quantity)), Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       b.inbound_id || item.inbound_id, b.date || null, b.size || null, b.weight || null,
@@ -428,9 +423,9 @@ router.get('/thong-ke', ensureAuth, async (req, res, next) => {
     `).all();
 
     const byCategory = await db.prepare(`
-      SELECT COALESCE(c.name,'(Chưa phân loại)') AS category, COUNT(*) AS cnt, COALESCE(SUM(i.quantity),0) AS qty
-      FROM inventory i LEFT JOIN categories c ON c.id = i.category_id
-      GROUP BY c.name ORDER BY cnt DESC
+      SELECT COALESCE(NULLIF(TRIM(category),''),'(Chưa phân loại)') AS category, COUNT(*) AS cnt, COALESCE(SUM(quantity),0) AS qty
+      FROM inventory
+      GROUP BY category ORDER BY cnt DESC
     `).all();
 
     const bySupplier = await db.prepare(`
