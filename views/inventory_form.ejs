@@ -33,12 +33,19 @@
       <input type="text" name="color" value="<%= it.color || '' %>" placeholder="Đỏ, Đen...">
     </div>
     <div class="field">
-      <label>Kích thước / Biến thể</label>
-      <input type="text" name="variant" value="<%= it.variant || '' %>" placeholder="S, M, L / 500ml...">
+      <label>Kích thước</label>
+      <input type="text" name="size" value="<%= it.size || '' %>" placeholder="4.8 x 2.6 x 4.1 in">
+    </div>
+    <div class="field field-wide">
+      <label>Link sản phẩm <span class="hint">(dán link → tự điền SKU + lấy giá gốc)</span></label>
+      <input type="text" id="product_url" name="product_url" value="<%= it.product_url || '' %>" placeholder="https://www.amazon.com/dp/B0EB4ADQW9">
+      <div id="sku-status" class="sku-status"></div>
     </div>
     <div class="field">
-      <label>Phiên bản</label>
-      <input type="text" name="version" value="<%= it.version || '' %>" placeholder="2024, Pro...">
+      <label>Giá gốc <span class="hint">(giá theo link)</span></label>
+      <input type="number" step="0.01" id="original_price" name="original_price" value="<%= it.original_price != null ? it.original_price : '' %>" placeholder="0">
+      <button type="button" id="btn-fetch-price" class="mini-link" style="border:none;background:none;cursor:pointer;padding:2px 0">🔗 Lấy giá từ link</button>
+      <div id="price-fetch-status" class="sku-status"></div>
     </div>
     <div class="field">
       <label>Giá nhập</label>
@@ -101,10 +108,6 @@
       <input type="text" name="date" value="<%= it.date || '' %>" placeholder="2026-06-02">
     </div>
     <div class="field">
-      <label>Kích thước kiện</label>
-      <input type="text" name="size" value="<%= it.size || '' %>" placeholder="21 x 12 x 11 in">
-    </div>
-    <div class="field">
       <label>Trọng lượng</label>
       <input type="text" name="weight" value="<%= it.weight || '' %>" placeholder="1.88 lbs">
     </div>
@@ -131,11 +134,6 @@
     <div class="field field-wide">
       <label>Địa chỉ (Add) <span class="hint">(địa chỉ giao/nhận)</span></label>
       <textarea name="address" rows="2" placeholder="Tên, đường, thành phố, mã ZIP..."><%= it.address || '' %></textarea>
-    </div>
-    <div class="field field-wide">
-      <label>Link sản phẩm <span class="hint">(dán link Amazon → tự điền SKU)</span></label>
-      <input type="text" id="product_url" name="product_url" value="<%= it.product_url || '' %>" placeholder="https://www.amazon.com/dp/B0EB4ADQW9">
-      <div id="sku-status" class="sku-status"></div>
     </div>
     <div class="field field-wide">
       <label>Hình ảnh sản phẩm (URL)</label>
@@ -190,6 +188,37 @@
   }
   urlInput.addEventListener('input', fill);
   urlInput.addEventListener('paste', function () { setTimeout(fill, 50); });
+
+  // 2b) Lấy giá gốc từ link sản phẩm
+  var origEl = document.getElementById('original_price');
+  var priceStatus = document.getElementById('price-fetch-status');
+  var btnFetch = document.getElementById('btn-fetch-price');
+  function fetchPrice(force) {
+    var url = urlInput.value.trim();
+    if (!/^https?:\/\//i.test(url)) { if (force) { priceStatus.textContent = 'Dán link hợp lệ trước (bắt đầu bằng http).'; priceStatus.className = 'sku-status warn'; } return; }
+    if (!force && origEl.value.trim()) return; // không ghi đè nếu đã có
+    priceStatus.textContent = '⏳ Đang lấy giá từ link...';
+    priceStatus.className = 'sku-status';
+    fetch('/api/fetch-price', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.ok && d.price) {
+        origEl.value = d.price;
+        priceStatus.textContent = '✓ Giá gốc lấy được: ' + Number(d.price).toLocaleString('vi-VN');
+        priceStatus.className = 'sku-status ok';
+        if (typeof calcPrice === 'function') calcPrice();
+      } else {
+        priceStatus.textContent = '✗ Không lấy được giá tự động (trang chặn hoặc không có giá). Hãy nhập tay.';
+        priceStatus.className = 'sku-status warn';
+      }
+    }).catch(function () {
+      priceStatus.textContent = '✗ Lỗi khi lấy giá. Hãy nhập tay.';
+      priceStatus.className = 'sku-status warn';
+    });
+  }
+  urlInput.addEventListener('change', function () { fetchPrice(false); });
+  if (btnFetch) btnFetch.addEventListener('click', function () { fetchPrice(true); });
 
   // 3) Gợi ý giá tối ưu khi nhập giá nhập + giá bán
   var costEl = document.getElementById('cost_price');

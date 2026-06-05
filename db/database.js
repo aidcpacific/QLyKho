@@ -124,6 +124,7 @@ async function init() {
   await ensureColumn('inventory', 'version', 'TEXT');
   await ensureColumn('inventory', 'cost_price', 'REAL');
   const addedSalePrice = await ensureColumn('inventory', 'sale_price', 'REAL');
+  await ensureColumn('inventory', 'original_price', 'REAL'); // Giá gốc (lấy từ link sản phẩm)
   await ensureColumn('inventory', 'on_order', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('inventory', 'max_quantity', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('inventory', 'address', 'TEXT');                    // Địa chỉ (Add)

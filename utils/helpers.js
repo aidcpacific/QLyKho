@@ -59,4 +59,37 @@ function extractSku(url) {
   return '';
 }
 
-module.exports = { buildTrackingUrl, detectCarrier, extractSku };
+/**
+ * Cố gắng bóc giá từ HTML của trang sản phẩm (best-effort, có thể không ra với trang chặn bot).
+ * Trả về số (giá) hoặc null.
+ */
+function extractPrice(html) {
+  if (!html) return null;
+  const h = String(html);
+  const tryNum = (s) => {
+    if (s == null) return null;
+    // bỏ ký tự ngăn cách nghìn, giữ dấu chấm thập phân
+    let v = String(s).replace(/[^\d.,]/g, '');
+    if (!v) return null;
+    // nếu có cả , và . -> coi , là ngăn cách nghìn
+    if (v.includes(',') && v.includes('.')) v = v.replace(/,/g, '');
+    else if (v.includes(',') && !v.includes('.')) v = v.replace(/,/g, '.');
+    const n = parseFloat(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  const patterns = [
+    /"priceAmount"\s*:\s*([\d.]+)/i,                              // Amazon JSON
+    /"price"\s*:\s*"?([\d.,]+)"?/i,                               // JSON-LD / chung
+    /property=["']product:price:amount["']\s+content=["']([\d.,]+)["']/i, // OpenGraph
+    /itemprop=["']price["']\s+content=["']([\d.,]+)["']/i,        // schema.org
+    /class=["']a-price-whole["']>\s*([\d.,]+)/i,                  // Amazon hiển thị
+    /id=["']priceblock_ourprice["'][^>]*>\s*\$?([\d.,]+)/i,       // Amazon cũ
+  ];
+  for (const re of patterns) {
+    const m = h.match(re);
+    if (m) { const n = tryNum(m[1]); if (n) return n; }
+  }
+  return null;
+}
+
+module.exports = { buildTrackingUrl, detectCarrier, extractSku, extractPrice };

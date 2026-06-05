@@ -5,7 +5,7 @@ const router = express.Router();
 const db = require('../db/database');
 const { ensureAuth, ensureAdmin } = require('../middleware/auth');
 const mailer = require('../utils/mailer');
-const { buildTrackingUrl, extractSku } = require('../utils/helpers');
+const { buildTrackingUrl, extractSku, extractPrice } = require('../utils/helpers');
 const { COLUMNS, toCsv, parseTable, looksLikeHeader } = require('../utils/csv');
 const { DEFAULT_CATEGORIES } = require('../utils/constants');
 
@@ -101,6 +101,31 @@ router.get('/dashboard', ensureAuth, async (req, res, next) => {
 
     res.render('dashboard', { title: 'Quản lý kho', items, stats, q, statuses: STATUSES });
   } catch (e) { next(e); }
+});
+
+// ===================== LẤY GIÁ GỐC TỪ LINK SẢN PHẨM =====================
+router.post('/api/fetch-price', ensureAuth, async (req, res) => {
+  const url = (req.body.url || '').trim();
+  if (!/^https?:\/\//i.test(url)) return res.json({ ok: false, error: 'URL không hợp lệ' });
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    const resp = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+      redirect: 'follow',
+      signal: ctrl.signal,
+    });
+    clearTimeout(timer);
+    const html = await resp.text();
+    const price = extractPrice(html);
+    if (price) return res.json({ ok: true, price });
+    return res.json({ ok: false, error: 'Không tìm thấy giá trên trang' });
+  } catch (e) {
+    return res.json({ ok: false, error: e.message });
+  }
 });
 
 // ===================== XUẤT CSV (mở bằng Google Sheets) =====================
@@ -216,13 +241,14 @@ router.post('/inventory', ensureAuth, async (req, res, next) => {
 
     const info = await db.prepare(`
       INSERT INTO inventory
-        (sku, name, category, color, variant, version, cost_price, sale_price, supplier_id,
+        (sku, name, category, color, variant, version, cost_price, sale_price, original_price, supplier_id,
          quantity, on_order, min_quantity, max_quantity,
          inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, address, status, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       sku, b.name.trim(), b.category || null, b.color || null, b.variant || null, b.version || null,
-      b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
+      b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null,
+      b.original_price ? num(b.original_price) : null, intOrNull(b.supplier_id),
       qty, Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       inboundId, b.date || null, b.size || null, b.weight || null,
       b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null,
@@ -296,14 +322,15 @@ router.post('/inventory/:id', ensureAuth, async (req, res, next) => {
     await db.prepare(`
       UPDATE inventory SET
         sku = ?, name = ?, category = ?, color = ?, variant = ?, version = ?,
-        cost_price = ?, sale_price = ?, supplier_id = ?,
+        cost_price = ?, sale_price = ?, original_price = ?, supplier_id = ?,
         quantity = ?, on_order = ?, min_quantity = ?, max_quantity = ?,
         inbound_id = ?, date = ?, size = ?, weight = ?, tracking = ?, carrier = ?, eta = ?,
         product_url = ?, image_url = ?, address = ?, status = ?, updated_at = datetime('now','localtime')
       WHERE id = ?
     `).run(
       sku, b.name.trim(), b.category || null, b.color || null, b.variant || null, b.version || null,
-      b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
+      b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null,
+      b.original_price ? num(b.original_price) : null, intOrNull(b.supplier_id),
       Math.round(num(b.quantity)), Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       b.inbound_id || item.inbound_id, b.date || null, b.size || null, b.weight || null,
       b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null,
