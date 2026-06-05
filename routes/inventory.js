@@ -7,7 +7,7 @@ const { ensureAuth, ensureAdmin } = require('../middleware/auth');
 const mailer = require('../utils/mailer');
 const { buildTrackingUrl, extractSku, extractPrice } = require('../utils/helpers');
 const { COLUMNS, toCsv, parseTable, looksLikeHeader } = require('../utils/csv');
-const { DEFAULT_CATEGORIES } = require('../utils/constants');
+const { DEFAULT_CATEGORIES, PRODUCT_STATUSES, STATUS_CLASS } = require('../utils/constants');
 
 async function getAdminEmails() {
   const rows = await db.prepare("SELECT email FROM users WHERE role = 'admin'").all();
@@ -18,11 +18,11 @@ function num(v, def = 0) {
   return Number.isFinite(n) ? n : def;
 }
 
-// Các trạng thái đơn hàng (Trạng Thái) + màu badge
-const STATUSES = ['Chờ xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'];
+// Các trạng thái đơn hàng (Trạng Thái) — danh sách cố định trong constants
+const STATUSES = PRODUCT_STATUSES;
 function normStatus(s) {
   s = (s || '').trim();
-  return STATUSES.includes(s) ? s : 'Chờ xử lý';
+  return STATUSES.includes(s) ? s : STATUSES[0];
 }
 function intOrNull(v) {
   if (v === undefined || v === null || String(v).trim() === '') return null;
@@ -99,7 +99,7 @@ router.get('/dashboard', ensureAuth, async (req, res, next) => {
       lowStock: (await db.prepare('SELECT COUNT(*) AS c FROM inventory WHERE min_quantity > 0 AND quantity <= min_quantity').get()).c,
     };
 
-    res.render('dashboard', { title: 'Quản lý kho', items, stats, q, statuses: STATUSES });
+    res.render('dashboard', { title: 'Quản lý kho', items, stats, q, statuses: STATUSES, statusClass: STATUS_CLASS });
   } catch (e) { next(e); }
 });
 
@@ -214,6 +214,7 @@ async function dropdownData(currentCategory) {
     categories,
     suppliers: await db.prepare('SELECT id, name FROM suppliers ORDER BY name').all(),
     statuses: STATUSES,
+    statusClass: STATUS_CLASS,
   };
 }
 

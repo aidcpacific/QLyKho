@@ -128,7 +128,8 @@ async function init() {
   await ensureColumn('inventory', 'on_order', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('inventory', 'max_quantity', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('inventory', 'address', 'TEXT');                    // Địa chỉ (Add)
-  await ensureColumn('inventory', "status", "TEXT NOT NULL DEFAULT 'Chờ xử lý'"); // Trạng thái
+  await ensureColumn('inventory', "status", "TEXT NOT NULL DEFAULT 'NEW'"); // Trạng thái
+  await ensureColumn('inventory', 'original_price', 'REAL');             // Giá gốc (theo link sản phẩm)
   const addedCategoryText = await ensureColumn('inventory', 'category', 'TEXT'); // Danh mục (lưu tên trực tiếp)
   // Chuyển danh mục cũ (category_id -> tên) sang cột category text
   if (addedCategoryText) {

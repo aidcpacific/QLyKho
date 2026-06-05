@@ -126,11 +126,19 @@ body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg)
 .opt-margin.low { color: var(--warn); }
 .opt-margin.loss { color: var(--danger); }
 .status-form { margin: 0; }
-.status-select { border: none; border-radius: 14px; padding: 4px 8px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; }
-.status-select.st-done { background: #198754; }
-.status-select.st-ship { background: #fd7e14; }
-.status-select.st-cancel { background: #dc3545; }
-.status-select.st-pending { background: #6c757d; }
+.status-select { border: none; border-radius: 14px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; }
+.status-select.st-new       { background: #6c757d; }   /* NEW - xám */
+.status-select.st-proc      { background: #7c4dff; }   /* PROCES - tím */
+.status-select.st-prep      { background: #d4d72a; color: #333; } /* PREPRING - vàng */
+.status-select.st-ship      { background: #2f6fed; }   /* SHIPPED - xanh dương */
+.status-select.st-deli      { background: #1f9d6b; }   /* DELI - xanh lá */
+.status-select.st-cancelreq { background: #b91c1c; }   /* XIN HỦY - đỏ đậm */
+.status-select.st-cancel    { background: #dc3545; }   /* HỦY - đỏ */
+.status-select.st-return    { background: #8a5a1e; }   /* RETURN - nâu */
+.status-select.st-bank      { background: #7a1f1f; }   /* ĐÃ BANK CO - đỏ thẫm */
+.status-select.st-received  { background: #6f42c1; }   /* da nhan - tím */
+.status-select.st-funny     { background: #e0392b; }   /* Het cmn h leu leu - đỏ */
+.status-select.st-out       { background: #8d8331; }   /* hết hàng - olive */
 .status-select option { background: #fff; color: #333; font-weight: 500; }
 .readonly { background: #f1f3f5; color: #555; font-weight: 700; }
 .mini-link { font-size: 12px; color: var(--primary); text-decoration: none; display: inline-block; margin-top: 4px; }

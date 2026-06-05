@@ -108,8 +108,8 @@
           <% } else { %><%= it.tracking || '' %><% } %>
         </td>
         <td>
-          <% var st = it.status || 'Chờ xử lý';
-             var stcls = st === 'Đã giao' ? 'st-done' : (st === 'Đang giao' ? 'st-ship' : (st === 'Đã hủy' ? 'st-cancel' : 'st-pending')); %>
+          <% var st = it.status || (statuses && statuses[0]) || '';
+             var stcls = (statusClass && statusClass[st]) || 'st-new'; %>
           <form action="/inventory/<%= it.id %>/status" method="POST" class="status-form">
             <select name="status" class="status-select <%= stcls %>" onchange="this.form.submit()">
               <% (statuses || []).forEach(function(s){ %>

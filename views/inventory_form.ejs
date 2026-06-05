@@ -65,79 +65,75 @@
       </select>
       <a href="/nha-cung-cap" target="_blank" class="mini-link">+ Thêm nhà kho</a>
     </div>
+    <div class="field field-wide">
+      <label>Hình ảnh sản phẩm (URL)</label>
+      <input type="text" name="image_url" value="<%= it.image_url || '' %>" placeholder="https://...">
+    </div>
     <!-- Gợi ý giá tối ưu (tự tính khi nhập giá nhập + giá bán) -->
     <div class="field field-wide">
       <div id="price-helper" class="price-helper">Nhập <b>Giá nhập</b> và <b>Giá bán</b> để xem lợi nhuận & gợi ý giá tối ưu.</div>
     </div>
   </div>
 
-  <!-- ===== Nhóm 2: Tồn kho ===== -->
-  <h2 class="section-title">📦 Tồn kho</h2>
+  <!-- ===== Nhóm 2: Thông tin kho ===== -->
+  <h2 class="section-title">📦 Thông tin kho</h2>
   <div class="grid">
     <div class="field">
-      <label>Số lượng hiện có</label>
+      <label>Số lượng thực tế <span class="hint">(đang có trong kho)</span></label>
       <input type="number" id="qty" name="quantity" min="0" value="<%= it.quantity != null ? it.quantity : 0 %>">
     </div>
     <div class="field">
-      <label>Số lượng đã đặt hàng <span class="hint">(đang về)</span></label>
+      <label>Số lượng dự tính <span class="hint">(đã đặt / đang về)</span></label>
       <input type="number" id="onorder" name="on_order" min="0" value="<%= it.on_order != null ? it.on_order : 0 %>">
     </div>
     <div class="field">
-      <label>Số lượng khả dụng <span class="hint">(tự tính = hiện có + đã đặt)</span></label>
+      <label>Số lượng khả dụng <span class="hint">(tự tính = thực tế + dự tính)</span></label>
       <input type="number" id="available" value="0" readonly class="readonly">
     </div>
     <div class="field">
-      <label>Tồn tối thiểu <span class="hint">(cảnh báo khi ≤ mức này)</span></label>
+      <label>Trạng thái</label>
+      <% var curSt = it.status || (statuses && statuses[0]) || ''; %>
+      <select name="status" id="status-select" class="status-select <%= (statusClass && statusClass[curSt]) || '' %>">
+        <% (statuses || []).forEach(function(st){ %>
+          <option value="<%= st %>" <%= curSt === st ? 'selected' : '' %>><%= st %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="field">
+      <label>Inbound ID</label>
+      <input type="text" name="inbound_id" value="<%= it.inbound_id || '' %>" placeholder="Tự sinh nếu trống">
+    </div>
+    <div class="field">
+      <label>Tracking number</label>
+      <input type="text" name="tracking" value="<%= it.tracking || '' %>" placeholder="1Z... / TBA... / 9200...">
+    </div>
+    <div class="field">
+      <label>Đơn vị vận chuyển <span class="hint">(tự nhận nếu trống)</span></label>
+      <input type="text" name="carrier" value="<%= it.carrier || '' %>" placeholder="USPS, UPS, Amazon, GHN...">
+    </div>
+    <div class="field">
+      <label>Tồn tối thiểu <span class="hint">(cảnh báo khi ≤)</span></label>
       <input type="number" name="min_quantity" min="0" value="<%= it.min_quantity != null ? it.min_quantity : 0 %>" placeholder="0 = tắt">
     </div>
     <div class="field">
       <label>Tồn tối đa</label>
       <input type="number" name="max_quantity" min="0" value="<%= it.max_quantity != null ? it.max_quantity : 0 %>" placeholder="0 = không giới hạn">
     </div>
-  </div>
-
-  <!-- ===== Nhóm 3: Vận chuyển / Nhập hàng ===== -->
-  <h2 class="section-title">🚚 Vận chuyển / Nhập hàng</h2>
-  <div class="grid">
-    <div class="field">
-      <label>Inbound ID</label>
-      <input type="text" name="inbound_id" value="<%= it.inbound_id || '' %>" placeholder="Tự sinh nếu trống">
-    </div>
     <div class="field">
       <label>Date</label>
       <input type="text" name="date" value="<%= it.date || '' %>" placeholder="2026-06-02">
-    </div>
-    <div class="field">
-      <label>Trọng lượng</label>
-      <input type="text" name="weight" value="<%= it.weight || '' %>" placeholder="1.88 lbs">
-    </div>
-    <div class="field">
-      <label>Tracking number</label>
-      <input type="text" name="tracking" value="<%= it.tracking || '' %>" placeholder="9200...">
-    </div>
-    <div class="field">
-      <label>Đơn vị vận chuyển</label>
-      <input type="text" name="carrier" value="<%= it.carrier || '' %>" placeholder="USPS, GHN, GHTK...">
     </div>
     <div class="field">
       <label>Ngày đến dự kiến</label>
       <input type="text" name="eta" value="<%= it.eta || '' %>" placeholder="2026-06-06">
     </div>
     <div class="field">
-      <label>Trạng thái</label>
-      <select name="status">
-        <% (statuses || []).forEach(function(st){ %>
-          <option value="<%= st %>" <%= (it.status || 'Chờ xử lý') === st ? 'selected' : '' %>><%= st %></option>
-        <% }); %>
-      </select>
+      <label>Trọng lượng</label>
+      <input type="text" name="weight" value="<%= it.weight || '' %>" placeholder="1.88 lbs">
     </div>
     <div class="field field-wide">
       <label>Địa chỉ (Add) <span class="hint">(địa chỉ giao/nhận)</span></label>
       <textarea name="address" rows="2" placeholder="Tên, đường, thành phố, mã ZIP..."><%= it.address || '' %></textarea>
-    </div>
-    <div class="field field-wide">
-      <label>Hình ảnh sản phẩm (URL)</label>
-      <input type="text" name="image_url" value="<%= it.image_url || '' %>" placeholder="https://...">
     </div>
   </div>
 
@@ -262,6 +258,13 @@
   costEl.addEventListener('input', calcPrice);
   saleEl.addEventListener('input', calcPrice);
   calcPrice();
+
+  // 4) Đổi màu ô trạng thái theo lựa chọn
+  var STATUS_CLASS = <%- JSON.stringify(statusClass || {}) %>;
+  var stSel = document.getElementById('status-select');
+  if (stSel) stSel.addEventListener('change', function () {
+    stSel.className = 'status-select ' + (STATUS_CLASS[stSel.value] || '');
+  });
 })();
 </script>
 
