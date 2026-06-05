@@ -108,8 +108,23 @@ body { font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: var(--bg)
 .ph-chip { display: inline-block; background: #e7f1ff; color: #0b5ed7; padding: 3px 10px; border-radius: 14px; margin-left: 6px; cursor: pointer; font-weight: 600; }
 .ph-chip:hover { background: #0d6efd; color: #fff; }
 
+/* Ô tích chọn + thanh thao tác hàng loạt */
+.col-check { width: 34px; text-align: center; }
+.col-check input { width: 16px; height: 16px; cursor: pointer; }
+.bulk-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #eef4ff; border: 1px solid #b6d4fe; border-radius: 10px; padding: 10px 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.bulk-count { font-size: 14px; color: #084298; }
+.bulk-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bulk-status-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; }
+
 /* Cột tiền + trạng thái trên bảng */
 .money { font-weight: 600; white-space: nowrap; }
+.opt-cell { white-space: nowrap; }
+.opt-price { font-weight: 700; color: #0aa2c0; }
+.opt-margin { font-size: 11px; font-weight: 600; }
+.opt-margin.good { color: var(--success); }
+.opt-margin.low { color: var(--warn); }
+.opt-margin.loss { color: var(--danger); }
 .status-form { margin: 0; }
 .status-select { border: none; border-radius: 14px; padding: 4px 8px; font-size: 12px; font-weight: 700; cursor: pointer; color: #fff; }
 .status-select.st-done { background: #198754; }

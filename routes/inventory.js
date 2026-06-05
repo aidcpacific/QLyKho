@@ -243,6 +243,39 @@ router.post('/inventory', ensureAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// ===================== THAO TÁC HÀNG LOẠT =====================
+function bodyIds(req) {
+  let ids = req.body.ids || [];
+  if (!Array.isArray(ids)) ids = [ids];
+  return ids.map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n));
+}
+
+// Đổi trạng thái nhiều sản phẩm
+router.post('/inventory/bulk-status', ensureAuth, async (req, res, next) => {
+  try {
+    const ids = bodyIds(req);
+    const status = normStatus(req.body.status);
+    for (const id of ids) {
+      await db.prepare("UPDATE inventory SET status = ?, updated_at = datetime('now','localtime') WHERE id = ?").run(status, id);
+    }
+    req.flash('success', `Đã đổi trạng thái ${ids.length} sản phẩm thành "${status}".`);
+    res.redirect('/dashboard');
+  } catch (e) { next(e); }
+});
+
+// Xóa nhiều sản phẩm (chỉ Admin)
+router.post('/inventory/bulk-delete', ensureAdmin, async (req, res, next) => {
+  try {
+    const ids = bodyIds(req);
+    for (const id of ids) {
+      await db.prepare('DELETE FROM transactions WHERE inventory_id = ?').run(id);
+      await db.prepare('DELETE FROM inventory WHERE id = ?').run(id);
+    }
+    req.flash('success', `Đã xóa ${ids.length} sản phẩm.`);
+    res.redirect('/dashboard');
+  } catch (e) { next(e); }
+});
+
 // ===================== FORM SỬA =====================
 router.get('/inventory/:id/edit', ensureAuth, async (req, res, next) => {
   try {

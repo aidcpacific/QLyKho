@@ -24,34 +24,54 @@
   <% if (q) { %><a class="btn btn-ghost" href="/dashboard">Xóa lọc</a><% } %>
 </form>
 
+<!-- Thanh thao tác hàng loạt (hiện khi tích chọn) -->
+<div id="bulk-bar" class="bulk-bar" style="display:none">
+  <span class="bulk-count">Đã chọn <b id="bulk-count">0</b> sản phẩm</span>
+  <div class="bulk-actions">
+    <select id="bulk-status-select" class="bulk-status-select">
+      <% (statuses || []).forEach(function(s){ %><option value="<%= s %>"><%= s %></option><% }); %>
+    </select>
+    <button type="button" class="btn btn-sm btn-primary" id="btn-bulk-status">Áp dụng trạng thái</button>
+    <% if (user.role === 'admin') { %>
+      <button type="button" class="btn btn-sm btn-out" id="btn-bulk-delete">🗑 Xóa đã chọn</button>
+    <% } %>
+    <button type="button" class="btn btn-sm btn-ghost" id="btn-bulk-clear">Bỏ chọn</button>
+  </div>
+</div>
+
+<!-- Form ẩn để gửi thao tác hàng loạt -->
+<form id="bulk-status-form" action="/inventory/bulk-status" method="POST" style="display:none">
+  <input type="hidden" name="status" id="bulk-status-value">
+</form>
+<form id="bulk-delete-form" action="/inventory/bulk-delete" method="POST" style="display:none"></form>
+
 <div class="table-wrap">
   <table class="data-table">
     <thead>
       <tr>
+        <th class="col-check"><input type="checkbox" id="check-all" title="Chọn tất cả"></th>
         <th>Hình</th>
         <th>SKU</th>
         <th>Tên sản phẩm</th>
-        <th>Danh mục</th>
-        <th>Biến thể</th>
+        <th>Kích thước</th>
+        <th>Màu sắc</th>
         <th>Giá nhập</th>
         <th>Giá bán</th>
-        <th>NCC</th>
+        <th>Nhà Kho</th>
         <th>Hiện có</th>
-        <th>Đã đặt</th>
-        <th>Khả dụng</th>
-        <th>Thành tiền</th>
-        <th>Trạng thái</th>
-        <th>Min/Max</th>
+        <th title="Giá bán đề xuất (biên lợi nhuận ~30% so với giá nhập)">Giá tối ưu</th>
         <th>Tracking</th>
+        <th>Trạng thái</th>
         <th class="col-actions">Thao tác</th>
       </tr>
     </thead>
     <tbody>
     <% if (items.length === 0) { %>
-      <tr><td colspan="16" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
+      <tr><td colspan="14" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
     <% } %>
     <% items.forEach(function(it){ var low = (it.min_quantity > 0 && it.quantity <= it.min_quantity); %>
       <tr class="<%= low ? 'row-low' : '' %>">
+        <td class="col-check"><input type="checkbox" class="row-check" value="<%= it.id %>"></td>
         <td>
           <% if (it.image_url) { %>
             <a href="<%= it.image_url %>" target="_blank"><img class="thumb" src="<%= it.image_url %>" alt="" onerror="this.style.display='none'"></a>
@@ -62,11 +82,8 @@
           <%= it.name %>
           <% if (it.inbound_id) { %><span class="inbound-mini"><%= it.inbound_id %></span><% } %>
         </td>
-        <td><% if (it.category) { %><span class="cat-badge"><%= it.category %></span><% } else { %><span class="muted">—</span><% } %></td>
-        <td class="variant-cell">
-          <% var vs = [it.color, it.variant, it.version].filter(Boolean); %>
-          <%= vs.length ? vs.join(' / ') : '' %>
-        </td>
+        <td><%= it.size || '' %></td>
+        <td><%= it.color || '' %></td>
         <td><%= it.cost_price != null ? Number(it.cost_price).toLocaleString('vi-VN') : '' %></td>
         <td><%= it.sale_price != null ? Number(it.sale_price).toLocaleString('vi-VN') : '' %></td>
         <td><%= it.supplier || '' %></td>
@@ -74,9 +91,22 @@
           <%= it.quantity %>
           <% if (low) { %><span class="tag-low">thấp</span><% } %>
         </td>
-        <td class="qty-order"><%= it.on_order %></td>
-        <td class="qty-avail"><b><%= it.available %></b></td>
-        <td class="money"><%= it.sale_price != null ? Number(it.sale_price * it.quantity).toLocaleString('vi-VN') : '' %></td>
+        <td class="opt-cell">
+          <% if (it.cost_price != null && it.cost_price > 0) {
+               var opt = Math.round(it.cost_price / 0.7); // giá bán đề xuất ~30% biên LN
+               var margin = (it.sale_price && it.sale_price > 0) ? ((it.sale_price - it.cost_price) / it.sale_price * 100) : null;
+               var mcls = margin == null ? '' : (margin < 0 ? 'loss' : (margin < 10 ? 'low' : 'good')); %>
+            <span class="opt-price"><%= opt.toLocaleString('vi-VN') %></span>
+            <% if (margin != null) { %><br><span class="opt-margin <%= mcls %>">LN <%= margin.toFixed(0) %>%</span><% } %>
+          <% } else { %><span class="muted">—</span><% } %>
+        </td>
+        <td>
+          <% if (it.tracking && it.tracking_url) { %>
+            <a href="<%= it.tracking_url %>" target="_blank" rel="noopener" class="track-link" title="Tra cứu vận đơn (<%= it.carrier || '' %>)">
+              <%= it.tracking %> <span class="track-ico">🔎</span>
+            </a>
+          <% } else { %><%= it.tracking || '' %><% } %>
+        </td>
         <td>
           <% var st = it.status || 'Chờ xử lý';
              var stcls = st === 'Đã giao' ? 'st-done' : (st === 'Đang giao' ? 'st-ship' : (st === 'Đã hủy' ? 'st-cancel' : 'st-pending')); %>
@@ -87,14 +117,6 @@
               <% }); %>
             </select>
           </form>
-        </td>
-        <td class="minmax"><%= it.min_quantity %> / <%= it.max_quantity || '∞' %></td>
-        <td>
-          <% if (it.tracking && it.tracking_url) { %>
-            <a href="<%= it.tracking_url %>" target="_blank" rel="noopener" class="track-link" title="Tra cứu vận đơn (<%= it.carrier || '' %>)">
-              <%= it.tracking %> <span class="track-ico">🔎</span>
-            </a>
-          <% } else { %><%= it.tracking || '' %><% } %>
         </td>
         <td class="col-actions">
           <div class="action-group">
@@ -120,5 +142,60 @@
     </tbody>
   </table>
 </div>
+
+<script>
+(function () {
+  var checkAll = document.getElementById('check-all');
+  var bar = document.getElementById('bulk-bar');
+  var countEl = document.getElementById('bulk-count');
+  function rowChecks() { return Array.prototype.slice.call(document.querySelectorAll('.row-check')); }
+
+  function selectedIds() {
+    return rowChecks().filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+  }
+  function refresh() {
+    var ids = selectedIds();
+    countEl.textContent = ids.length;
+    bar.style.display = ids.length ? 'flex' : 'none';
+    var all = rowChecks();
+    if (checkAll) checkAll.checked = all.length > 0 && ids.length === all.length;
+  }
+  if (checkAll) checkAll.addEventListener('change', function () {
+    rowChecks().forEach(function (c) { c.checked = checkAll.checked; });
+    refresh();
+  });
+  rowChecks().forEach(function (c) { c.addEventListener('change', refresh); });
+
+  // Đưa các id đã chọn vào 1 form rồi submit
+  function submitWithIds(form) {
+    var ids = selectedIds();
+    if (!ids.length) return;
+    form.querySelectorAll('input[name="ids"]').forEach(function (el) { el.remove(); });
+    ids.forEach(function (id) {
+      var inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = 'ids'; inp.value = id;
+      form.appendChild(inp);
+    });
+    form.submit();
+  }
+
+  var btnStatus = document.getElementById('btn-bulk-status');
+  if (btnStatus) btnStatus.addEventListener('click', function () {
+    var f = document.getElementById('bulk-status-form');
+    document.getElementById('bulk-status-value').value = document.getElementById('bulk-status-select').value;
+    submitWithIds(f);
+  });
+  var btnDelete = document.getElementById('btn-bulk-delete');
+  if (btnDelete) btnDelete.addEventListener('click', function () {
+    if (confirm('Xóa ' + selectedIds().length + ' sản phẩm đã chọn?')) submitWithIds(document.getElementById('bulk-delete-form'));
+  });
+  var btnClear = document.getElementById('btn-bulk-clear');
+  if (btnClear) btnClear.addEventListener('click', function () {
+    rowChecks().forEach(function (c) { c.checked = false; });
+    if (checkAll) checkAll.checked = false;
+    refresh();
+  });
+})();
+</script>
 
 <%- include('partials/footer') %>
