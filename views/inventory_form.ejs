@@ -112,14 +112,6 @@
       <input type="text" name="carrier" value="<%= it.carrier || '' %>" placeholder="USPS, UPS, Amazon, GHN...">
     </div>
     <div class="field">
-      <label>Tồn tối thiểu <span class="hint">(cảnh báo khi ≤)</span></label>
-      <input type="number" name="min_quantity" min="0" value="<%= it.min_quantity != null ? it.min_quantity : 0 %>" placeholder="0 = tắt">
-    </div>
-    <div class="field">
-      <label>Tồn tối đa</label>
-      <input type="number" name="max_quantity" min="0" value="<%= it.max_quantity != null ? it.max_quantity : 0 %>" placeholder="0 = không giới hạn">
-    </div>
-    <div class="field">
       <label>Date</label>
       <input type="text" name="date" value="<%= it.date || '' %>" placeholder="2026-06-02">
     </div>
