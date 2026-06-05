@@ -10,8 +10,7 @@ const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
 
 // Local (file:) -> dùng bản đầy đủ (native). Đám mây (libsql://) -> dùng bản web thuần JS
 // để chạy được trên Vercel serverless mà không cần thư viện native.
-const isFile = url.startsWith('file:');
-const { createClient } = require(isFile ? '@libsql/client' : '@libsql/client/web');
+const { createClient } = require('@libsql/client');
 const client = createClient(authToken ? { url, authToken } : { url });
 
 // Chuẩn hóa tham số: undefined -> null (libSQL không nhận undefined)
@@ -127,6 +126,8 @@ async function init() {
   const addedSalePrice = await ensureColumn('inventory', 'sale_price', 'REAL');
   await ensureColumn('inventory', 'on_order', 'INTEGER NOT NULL DEFAULT 0');
   await ensureColumn('inventory', 'max_quantity', 'INTEGER NOT NULL DEFAULT 0');
+  await ensureColumn('inventory', 'address', 'TEXT');                    // Địa chỉ (Add)
+  await ensureColumn('inventory', "status", "TEXT NOT NULL DEFAULT 'Chờ xử lý'"); // Trạng thái
 
   if (addedSalePrice) {
     try {

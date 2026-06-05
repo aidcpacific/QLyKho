@@ -1,17 +1,34 @@
 'use strict';
 
 /**
- * Tạo link tra cứu vận đơn dựa theo đơn vị vận chuyển + mã tracking.
+ * Tự nhận đơn vị vận chuyển dựa theo định dạng mã tracking.
+ * Trả về tên hãng hoặc '' nếu không đoán được.
+ */
+function detectCarrier(tracking) {
+  const t = String(tracking || '').trim().toUpperCase().replace(/\s/g, '');
+  if (!t) return '';
+  if (/^1Z[0-9A-Z]{16}$/.test(t)) return 'UPS';                 // UPS: 1Z...
+  if (/^TBA\d+/.test(t)) return 'Amazon';                       // Amazon Logistics: TBA...
+  if (/^(94|93|92|95|91|94)\d{18,24}$/.test(t)) return 'USPS';  // USPS: 9x... (20-26 số)
+  if (/^\d{12}$/.test(t) || /^\d{15}$/.test(t)) return 'FedEx'; // FedEx: 12 hoặc 15 số
+  if (/^\d{10}$/.test(t)) return 'DHL';                         // DHL: 10 số
+  return '';
+}
+
+/**
+ * Tạo link tra cứu vận đơn. Nếu chưa khai báo hãng, tự đoán từ mã tracking.
  * Trả về null nếu không có mã tracking.
  */
 function buildTrackingUrl(carrier, tracking) {
   if (!tracking) return null;
   const t = encodeURIComponent(String(tracking).trim());
-  const c = String(carrier || '').toLowerCase();
+  let c = String(carrier || '').toLowerCase();
+  if (!c.trim()) c = detectCarrier(tracking).toLowerCase(); // tự đoán nếu trống
 
   if (c.includes('usps')) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${t}`;
   if (c.includes('ups')) return `https://www.ups.com/track?tracknum=${t}`;
   if (c.includes('fedex')) return `https://www.fedex.com/fedextrack/?trknbr=${t}`;
+  if (c.includes('amazon')) return `https://track.amazon.com/tracking/${t}`;
   if (c.includes('dhl')) return `https://www.dhl.com/vn-vi/home/tracking.html?tracking-id=${t}`;
   if (c.includes('ghn')) return `https://donhang.ghn.vn/?order_code=${t}`;
   if (c.includes('ghtk') || c.includes('giao hang tiet kiem')) return `https://i.ghtk.vn/${t}`;
@@ -42,4 +59,4 @@ function extractSku(url) {
   return '';
 }
 
-module.exports = { buildTrackingUrl, extractSku };
+module.exports = { buildTrackingUrl, detectCarrier, extractSku };

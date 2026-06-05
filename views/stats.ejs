@@ -57,7 +57,7 @@
 
   <!-- Theo nhà cung cấp -->
   <div class="panel">
-    <h2>Theo nhà cung cấp</h2>
+    <h2>Theo nhà kho</h2>
     <% if (bySupplier.length === 0) { %><p class="muted">Chưa có dữ liệu.</p><% } else {
          var maxSup = 1; bySupplier.forEach(function(s){ maxSup = Math.max(maxSup, s.cnt); }); %>
       <% bySupplier.forEach(function(s){ %>

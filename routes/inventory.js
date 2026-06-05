@@ -16,6 +16,13 @@ function num(v, def = 0) {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n : def;
 }
+
+// Các trạng thái đơn hàng (Trạng Thái) + màu badge
+const STATUSES = ['Chờ xử lý', 'Đang giao', 'Đã giao', 'Đã hủy'];
+function normStatus(s) {
+  s = (s || '').trim();
+  return STATUSES.includes(s) ? s : 'Chờ xử lý';
+}
 function intOrNull(v) {
   if (v === undefined || v === null || String(v).trim() === '') return null;
   const n = parseInt(v, 10);
@@ -100,7 +107,7 @@ router.get('/dashboard', ensureAuth, async (req, res, next) => {
       lowStock: (await db.prepare('SELECT COUNT(*) AS c FROM inventory WHERE min_quantity > 0 AND quantity <= min_quantity').get()).c,
     };
 
-    res.render('dashboard', { title: 'Quản lý kho', items, stats, q });
+    res.render('dashboard', { title: 'Quản lý kho', items, stats, q, statuses: STATUSES });
   } catch (e) { next(e); }
 });
 
@@ -137,8 +144,8 @@ router.post('/inventory/import', ensureAuth, async (req, res, next) => {
       INSERT INTO inventory
         (sku, name, category_id, color, variant, version, cost_price, sale_price, supplier_id,
          quantity, on_order, min_quantity, max_quantity,
-         inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, address, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     const insertTxn = db.prepare('INSERT INTO transactions (inventory_id, type, quantity, note, user_id) VALUES (?, ?, ?, ?, ?)');
 
@@ -167,7 +174,8 @@ router.post('/inventory/import', ensureAuth, async (req, res, next) => {
           g(6) ? num(g(6)) : null, g(7) ? num(g(7)) : null, await resolveSupplierId(g(8)),
           qty, Math.round(num(g(10))), Math.round(num(g(11))), Math.round(num(g(12))),
           inboundId, g(14) || null, g(15) || null, g(16) || null,
-          g(17) || null, g(18) || null, g(19) || null, productUrl, g(21) || null, req.user.id
+          g(17) || null, g(18) || null, g(19) || null, productUrl, g(21) || null,
+          g(22) || null, normStatus(g(23)), req.user.id
         );
         if (qty > 0) await insertTxn.run(info.lastInsertRowid, 'in', qty, 'Nhập hàng loạt', req.user.id);
         ok++;
@@ -185,6 +193,7 @@ async function dropdownData() {
   return {
     categories: await db.prepare('SELECT id, name FROM categories ORDER BY name').all(),
     suppliers: await db.prepare('SELECT id, name FROM suppliers ORDER BY name').all(),
+    statuses: STATUSES,
   };
 }
 
@@ -214,14 +223,15 @@ router.post('/inventory', ensureAuth, async (req, res, next) => {
       INSERT INTO inventory
         (sku, name, category_id, color, variant, version, cost_price, sale_price, supplier_id,
          quantity, on_order, min_quantity, max_quantity,
-         inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, created_by)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         inbound_id, date, size, weight, tracking, carrier, eta, product_url, image_url, address, status, created_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       sku, b.name.trim(), intOrNull(b.category_id), b.color || null, b.variant || null, b.version || null,
       b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
       qty, Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       inboundId, b.date || null, b.size || null, b.weight || null,
-      b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null, req.user.id
+      b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null,
+      b.address || null, normStatus(b.status), req.user.id
     );
 
     if (qty > 0) {
@@ -261,14 +271,15 @@ router.post('/inventory/:id', ensureAuth, async (req, res, next) => {
         cost_price = ?, sale_price = ?, supplier_id = ?,
         quantity = ?, on_order = ?, min_quantity = ?, max_quantity = ?,
         inbound_id = ?, date = ?, size = ?, weight = ?, tracking = ?, carrier = ?, eta = ?,
-        product_url = ?, image_url = ?, updated_at = datetime('now','localtime')
+        product_url = ?, image_url = ?, address = ?, status = ?, updated_at = datetime('now','localtime')
       WHERE id = ?
     `).run(
       sku, b.name.trim(), intOrNull(b.category_id), b.color || null, b.variant || null, b.version || null,
       b.cost_price ? num(b.cost_price) : null, b.sale_price ? num(b.sale_price) : null, intOrNull(b.supplier_id),
       Math.round(num(b.quantity)), Math.round(num(b.on_order)), Math.round(num(b.min_quantity)), Math.round(num(b.max_quantity)),
       b.inbound_id || item.inbound_id, b.date || null, b.size || null, b.weight || null,
-      b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null, req.params.id
+      b.tracking || null, b.carrier || null, b.eta || null, b.product_url || null, b.image_url || null,
+      b.address || null, normStatus(b.status), req.params.id
     );
     req.flash('success', 'Đã cập nhật sản phẩm.');
     res.redirect('/dashboard');
@@ -310,6 +321,15 @@ router.post('/inventory/:id/stock', ensureAuth, async (req, res, next) => {
       });
     }
     req.flash('success', `${type === 'in' ? 'Nhập' : 'Xuất'} ${qty} "${item.name}". Tồn kho mới: ${newQty}.`);
+    res.redirect('/dashboard');
+  } catch (e) { next(e); }
+});
+
+// ===================== ĐỔI TRẠNG THÁI NHANH =====================
+router.post('/inventory/:id/status', ensureAuth, async (req, res, next) => {
+  try {
+    await db.prepare("UPDATE inventory SET status = ?, updated_at = datetime('now','localtime') WHERE id = ?")
+      .run(normStatus(req.body.status), req.params.id);
     res.redirect('/dashboard');
   } catch (e) { next(e); }
 });

@@ -36,6 +36,13 @@ app.use(async (req, res, next) => {
   try { await db.ready; next(); } catch (e) { next(e); }
 });
 
+// Chống cache cho các trang động (HTML) để không bị hiển thị bản cũ.
+// (File tĩnh CSS đã được phục vụ ở trên nên không bị ảnh hưởng.)
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+  next();
+});
+
 // Session (lưu vào DB để chạy được trên serverless)
 app.use(session({
   store: createLibsqlStore(),

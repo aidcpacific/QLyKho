@@ -39,6 +39,8 @@
         <th>Hiện có</th>
         <th>Đã đặt</th>
         <th>Khả dụng</th>
+        <th>Thành tiền</th>
+        <th>Trạng thái</th>
         <th>Min/Max</th>
         <th>Tracking</th>
         <th class="col-actions">Thao tác</th>
@@ -46,7 +48,7 @@
     </thead>
     <tbody>
     <% if (items.length === 0) { %>
-      <tr><td colspan="14" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
+      <tr><td colspan="16" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
     <% } %>
     <% items.forEach(function(it){ var low = (it.min_quantity > 0 && it.quantity <= it.min_quantity); %>
       <tr class="<%= low ? 'row-low' : '' %>">
@@ -74,6 +76,18 @@
         </td>
         <td class="qty-order"><%= it.on_order %></td>
         <td class="qty-avail"><b><%= it.available %></b></td>
+        <td class="money"><%= it.sale_price != null ? Number(it.sale_price * it.quantity).toLocaleString('vi-VN') : '' %></td>
+        <td>
+          <% var st = it.status || 'Chờ xử lý';
+             var stcls = st === 'Đã giao' ? 'st-done' : (st === 'Đang giao' ? 'st-ship' : (st === 'Đã hủy' ? 'st-cancel' : 'st-pending')); %>
+          <form action="/inventory/<%= it.id %>/status" method="POST" class="status-form">
+            <select name="status" class="status-select <%= stcls %>" onchange="this.form.submit()">
+              <% (statuses || []).forEach(function(s){ %>
+                <option value="<%= s %>" <%= st === s ? 'selected' : '' %>><%= s %></option>
+              <% }); %>
+            </select>
+          </form>
+        </td>
         <td class="minmax"><%= it.min_quantity %> / <%= it.max_quantity || '∞' %></td>
         <td>
           <% if (it.tracking && it.tracking_url) { %>

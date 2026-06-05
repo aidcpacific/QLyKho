@@ -27,6 +27,8 @@ const COLUMNS = [
   { key: 'eta',          label: 'Ngày đến dự kiến' },
   { key: 'product_url',  label: 'Link sản phẩm' },
   { key: 'image_url',    label: 'Hình ảnh sản phẩm' },
+  { key: 'address',      label: 'Địa chỉ' },
+  { key: 'status',       label: 'Trạng thái' },
 ];
 
 // Bọc một ô CSV (thêm dấu ngoặc kép nếu chứa dấu phẩy, ngoặc kép hoặc xuống dòng)

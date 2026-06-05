@@ -43,21 +43,25 @@
     </div>
     <div class="field">
       <label>Giá nhập</label>
-      <input type="number" step="0.01" name="cost_price" value="<%= it.cost_price != null ? it.cost_price : '' %>" placeholder="0">
+      <input type="number" step="0.01" id="cost_price" name="cost_price" value="<%= it.cost_price != null ? it.cost_price : '' %>" placeholder="0">
     </div>
     <div class="field">
       <label>Giá bán</label>
-      <input type="number" step="0.01" name="sale_price" value="<%= it.sale_price != null ? it.sale_price : '' %>" placeholder="0">
+      <input type="number" step="0.01" id="sale_price" name="sale_price" value="<%= it.sale_price != null ? it.sale_price : '' %>" placeholder="0">
     </div>
     <div class="field">
-      <label>Nhà cung cấp</label>
+      <label>Nhà Kho</label>
       <select name="supplier_id">
-        <option value="">— Chọn nhà cung cấp —</option>
+        <option value="">— Chọn nhà kho —</option>
         <% (suppliers || []).forEach(function(s){ %>
           <option value="<%= s.id %>" <%= it.supplier_id == s.id ? 'selected' : '' %>><%= s.name %></option>
         <% }); %>
       </select>
-      <a href="/nha-cung-cap" target="_blank" class="mini-link">+ Thêm NCC</a>
+      <a href="/nha-cung-cap" target="_blank" class="mini-link">+ Thêm nhà kho</a>
+    </div>
+    <!-- Gợi ý giá tối ưu (tự tính khi nhập giá nhập + giá bán) -->
+    <div class="field field-wide">
+      <div id="price-helper" class="price-helper">Nhập <b>Giá nhập</b> và <b>Giá bán</b> để xem lợi nhuận & gợi ý giá tối ưu.</div>
     </div>
   </div>
 
@@ -117,6 +121,18 @@
       <label>Ngày đến dự kiến</label>
       <input type="text" name="eta" value="<%= it.eta || '' %>" placeholder="2026-06-06">
     </div>
+    <div class="field">
+      <label>Trạng thái</label>
+      <select name="status">
+        <% (statuses || []).forEach(function(st){ %>
+          <option value="<%= st %>" <%= (it.status || 'Chờ xử lý') === st ? 'selected' : '' %>><%= st %></option>
+        <% }); %>
+      </select>
+    </div>
+    <div class="field field-wide">
+      <label>Địa chỉ (Add) <span class="hint">(địa chỉ giao/nhận)</span></label>
+      <textarea name="address" rows="2" placeholder="Tên, đường, thành phố, mã ZIP..."><%= it.address || '' %></textarea>
+    </div>
     <div class="field field-wide">
       <label>Link sản phẩm <span class="hint">(dán link Amazon → tự điền SKU)</span></label>
       <input type="text" id="product_url" name="product_url" value="<%= it.product_url || '' %>" placeholder="https://www.amazon.com/dp/B0EB4ADQW9">
@@ -175,6 +191,49 @@
   }
   urlInput.addEventListener('input', fill);
   urlInput.addEventListener('paste', function () { setTimeout(fill, 50); });
+
+  // 3) Gợi ý giá tối ưu khi nhập giá nhập + giá bán
+  var costEl = document.getElementById('cost_price');
+  var saleEl = document.getElementById('sale_price');
+  var helper = document.getElementById('price-helper');
+  function fmt(n) { return Math.round(n).toLocaleString('vi-VN'); }
+  function calcPrice() {
+    var cost = parseFloat(costEl.value) || 0;
+    var sale = parseFloat(saleEl.value) || 0;
+    if (cost <= 0) {
+      helper.className = 'price-helper';
+      helper.innerHTML = 'Nhập <b>Giá nhập</b> và <b>Giá bán</b> để xem lợi nhuận & gợi ý giá tối ưu.';
+      return;
+    }
+    // Gợi ý giá bán để đạt biên lợi nhuận mục tiêu: giá = giá nhập / (1 - margin)
+    var s20 = cost / (1 - 0.20), s30 = cost / (1 - 0.30), s40 = cost / (1 - 0.40);
+    var html = '<div class="ph-suggest">💡 Gợi ý giá bán tối ưu (theo biên lợi nhuận): '
+      + '<span class="ph-chip" data-v="' + Math.round(s20) + '">20% → ' + fmt(s20) + '</span>'
+      + '<span class="ph-chip" data-v="' + Math.round(s30) + '">30% → ' + fmt(s30) + '</span>'
+      + '<span class="ph-chip" data-v="' + Math.round(s40) + '">40% → ' + fmt(s40) + '</span></div>';
+
+    if (sale > 0) {
+      var profit = sale - cost;
+      var margin = sale > 0 ? (profit / sale * 100) : 0;
+      var markup = cost > 0 ? (profit / cost * 100) : 0;
+      var cls = profit < 0 ? 'loss' : (margin < 10 ? 'low' : 'good');
+      var msg = profit < 0 ? '⚠ ĐANG LỖ' : (margin < 10 ? '⚠ Lãi mỏng' : '✓ Tốt');
+      html = '<div class="ph-stat ' + cls + '">'
+        + '<span>Lợi nhuận/cái: <b>' + fmt(profit) + '</b></span>'
+        + '<span>Biên LN: <b>' + margin.toFixed(1) + '%</b></span>'
+        + '<span>Markup: <b>' + markup.toFixed(1) + '%</b></span>'
+        + '<span class="ph-tag">' + msg + '</span></div>' + html;
+    }
+    helper.className = 'price-helper active';
+    helper.innerHTML = html;
+    // Bấm vào chip để điền nhanh giá bán gợi ý
+    helper.querySelectorAll('.ph-chip').forEach(function (chip) {
+      chip.addEventListener('click', function () { saleEl.value = chip.getAttribute('data-v'); calcPrice(); });
+    });
+  }
+  costEl.addEventListener('input', calcPrice);
+  saleEl.addEventListener('input', calcPrice);
+  calcPrice();
 })();
 </script>
 

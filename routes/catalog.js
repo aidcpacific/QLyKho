@@ -62,7 +62,7 @@ router.get('/nha-cung-cap', ensureAuth, async (req, res, next) => {
       SELECT s.*, (SELECT COUNT(*) FROM inventory i WHERE i.supplier_id = s.id) AS product_count
       FROM suppliers s ORDER BY s.name
     `).all();
-    res.render('suppliers', { title: 'Nhà cung cấp', suppliers });
+    res.render('suppliers', { title: 'Nhà Kho', suppliers });
   } catch (e) { next(e); }
 });
 
@@ -70,13 +70,13 @@ router.post('/nha-cung-cap', ensureAuth, async (req, res) => {
   const b = req.body;
   const name = (b.name || '').trim();
   if (!name) {
-    req.flash('error', 'Tên nhà cung cấp là bắt buộc.');
+    req.flash('error', 'Tên nhà kho là bắt buộc.');
     return res.redirect('/nha-cung-cap');
   }
   try {
     await db.prepare('INSERT INTO suppliers (name, phone, email, address, note) VALUES (?, ?, ?, ?, ?)')
       .run(name, b.phone || null, b.email || null, b.address || null, b.note || null);
-    req.flash('success', `Đã thêm nhà cung cấp "${name}".`);
+    req.flash('success', `Đã thêm nhà kho "${name}".`);
   } catch (e) {
     req.flash('error', /UNIQUE/i.test(e.message) ? 'Nhà cung cấp này đã tồn tại.' : 'Lỗi: ' + e.message);
   }
@@ -90,9 +90,9 @@ router.post('/nha-cung-cap/:id', ensureAuth, async (req, res) => {
     try {
       await db.prepare('UPDATE suppliers SET name = ?, phone = ?, email = ?, address = ?, note = ? WHERE id = ?')
         .run(name, b.phone || null, b.email || null, b.address || null, b.note || null, req.params.id);
-      req.flash('success', 'Đã cập nhật nhà cung cấp.');
+      req.flash('success', 'Đã cập nhật nhà kho.');
     } catch (e) {
-      req.flash('error', /UNIQUE/i.test(e.message) ? 'Tên nhà cung cấp bị trùng.' : 'Lỗi: ' + e.message);
+      req.flash('error', /UNIQUE/i.test(e.message) ? 'Tên nhà kho bị trùng.' : 'Lỗi: ' + e.message);
     }
   }
   res.redirect('/nha-cung-cap');
@@ -102,7 +102,7 @@ router.post('/nha-cung-cap/:id/delete', ensureAdmin, async (req, res, next) => {
   try {
     await db.prepare('UPDATE inventory SET supplier_id = NULL WHERE supplier_id = ?').run(req.params.id);
     await db.prepare('DELETE FROM suppliers WHERE id = ?').run(req.params.id);
-    req.flash('success', 'Đã xóa nhà cung cấp.');
+    req.flash('success', 'Đã xóa nhà kho.');
     res.redirect('/nha-cung-cap');
   } catch (e) { next(e); }
 });
