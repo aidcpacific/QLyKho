@@ -134,6 +134,23 @@ async function init() {
       await client.execute('UPDATE inventory SET sale_price = value WHERE sale_price IS NULL AND value IS NOT NULL');
     } catch (e) { /* cột value có thể không tồn tại */ }
   }
+
+  // Tự thêm danh mục thường dùng (chỉ khi chưa có danh mục nào)
+  const catCount = Number((await client.execute('SELECT COUNT(*) AS c FROM categories')).rows[0].c);
+  if (catCount === 0) {
+    const DEFAULT_CATEGORIES = [
+      'Điện tử', 'Máy ảnh & Quay phim', 'Điện thoại & Phụ kiện', 'Máy tính & Laptop',
+      'Đồ chơi & Trò chơi', 'Game & Máy chơi game', 'Sách & Văn phòng phẩm',
+      'Thực phẩm & Đồ uống', 'Sức khỏe & Làm đẹp', 'Mẹ & Bé',
+      'Thời trang & Phụ kiện', 'Nhà cửa & Đời sống', 'Gia dụng',
+      'Thể thao & Dã ngoại', 'Khác',
+    ];
+    for (const name of DEFAULT_CATEGORIES) {
+      await client.execute({ sql: 'INSERT OR IGNORE INTO categories (name) VALUES (?)', args: [name] });
+    }
+    if (!process.env.QUIET_DB) console.log(`[DB] Đã thêm ${DEFAULT_CATEGORIES.length} danh mục mặc định`);
+  }
+
   if (!process.env.QUIET_DB) console.log('[DB] Sẵn sàng.');
 }
 
