@@ -87,8 +87,8 @@
       <input type="number" id="onorder" name="on_order" min="0" value="<%= it.on_order != null ? it.on_order : 0 %>">
     </div>
     <div class="field">
-      <label>Số lượng khả dụng <span class="hint">(tự tính = thực tế + dự tính)</span></label>
-      <input type="number" id="available" value="0" readonly class="readonly">
+      <label>Số lượng còn thiếu <span class="hint">(tự tính = dự tính − thực tế)</span></label>
+      <input type="number" id="shortage" value="0" readonly class="readonly">
     </div>
     <div class="field">
       <label>Trạng thái</label>
@@ -134,17 +134,18 @@
 
 <script>
 (function () {
-  // 1) Tự tính khả dụng = hiện có + đã đặt
+  // 1) Tự tính số lượng còn thiếu = dự tính - thực tế (không âm)
   var qty = document.getElementById('qty');
   var onorder = document.getElementById('onorder');
-  var avail = document.getElementById('available');
-  function calcAvail() {
-    var a = (parseInt(qty.value, 10) || 0) + (parseInt(onorder.value, 10) || 0);
-    avail.value = a;
+  var shortage = document.getElementById('shortage');
+  function calcShortage() {
+    var actual = parseInt(qty.value, 10) || 0;
+    var planned = parseInt(onorder.value, 10) || 0;
+    shortage.value = Math.max(0, planned - actual);
   }
-  qty.addEventListener('input', calcAvail);
-  onorder.addEventListener('input', calcAvail);
-  calcAvail();
+  qty.addEventListener('input', calcShortage);
+  onorder.addEventListener('input', calcShortage);
+  calcShortage();
 
   // 2) Tự bóc SKU (ASIN) từ link sản phẩm
   var urlInput = document.getElementById('product_url');

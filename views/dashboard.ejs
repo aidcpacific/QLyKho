@@ -66,8 +66,11 @@
         <th>Màu sắc</th>
         <th>Giá nhập</th>
         <th>Giá bán</th>
+        <th>Giá gốc</th>
         <th>Nhà Kho</th>
         <th>Hiện có</th>
+        <th>Dự tính</th>
+        <th>Còn thiếu</th>
         <th title="Giá bán đề xuất (biên lợi nhuận ~30% so với giá nhập)">Giá tối ưu</th>
         <th>Tracking</th>
         <th>Địa chỉ</th>
@@ -77,7 +80,7 @@
     </thead>
     <tbody>
     <% if (items.length === 0) { %>
-      <tr><td colspan="15" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
+      <tr><td colspan="18" class="empty">Chưa có sản phẩm nào. Hãy bấm "Thêm sản phẩm".</td></tr>
     <% } %>
     <% items.forEach(function(it){ var low = (it.min_quantity > 0 && it.quantity <= it.min_quantity); %>
       <tr class="<%= low ? 'row-low' : '' %>">
@@ -96,10 +99,16 @@
         <td><%= it.color || '' %></td>
         <td><%= it.cost_price != null ? Number(it.cost_price).toLocaleString('vi-VN') : '' %></td>
         <td><%= it.sale_price != null ? Number(it.sale_price).toLocaleString('vi-VN') : '' %></td>
+        <td><%= it.original_price != null ? Number(it.original_price).toLocaleString('vi-VN') : '' %></td>
         <td><%= it.supplier || '' %></td>
         <td class="qty">
           <%= it.quantity %>
           <% if (low) { %><span class="tag-low">thấp</span><% } %>
+        </td>
+        <td class="qty-order"><%= it.on_order %></td>
+        <td class="qty-short">
+          <% var sh = Math.max(0, (it.on_order || 0) - (it.quantity || 0)); %>
+          <%= sh > 0 ? sh : '—' %>
         </td>
         <td class="opt-cell">
           <% if (it.cost_price != null && it.cost_price > 0) {
